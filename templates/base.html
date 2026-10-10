@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/css/malhacore.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand-badge">
+            <span class="brand-title">MALHACORE</span>
+            <span class="brand-tag">LEDGER & COMMAND</span>
+        </div>
+        <div class="telemetry-status">
+            <span><span class="live-indicator"></span>SISTEMA ATIVO</span>
+            <span class="mono">APPS: {{ telemetria.total_apps if telemetria else 0 }}</span>
+            <span class="mono">DISP: {{ telemetria.taxa_disponibilidade if telemetria else 100 }}%</span>
+            {% if telemetria and telemetria.total_erros_ativos > 0 %}
+            <span class="mono" style="color: var(--status-inadimplente-text); font-weight: 700;">
+                ERROS ATIVOS: {{ telemetria.total_erros_ativos }}
+            </span>
+            {% else %}
+            <span class="mono" style="color: var(--status-pago-text);">ERROS: 0</span>
+            {% endif %}
+            <span class="mono">SQLITE LOCAL | CUSTO: R$ 0,00</span>
+            {% if usuario_logado %}
+            <span class="mono" style="color: var(--accent-cyan); font-weight: 700;">
+                OPERADOR: {{ usuario_logado.email }}
+            </span>
+            <a href="/logout" class="btn btn-sm" style="font-size: 9px; padding: 2px 6px; color: var(--status-inadimplente-text); border-color: var(--status-inadimplente-border); text-decoration: none;" title="Encerrar sessão de forma segura">
+                SAIR
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="toastMsg" class="toast-msg mono"></div>
+
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

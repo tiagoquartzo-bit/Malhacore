@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: malhacore-central
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_NAME
+        value: MalhaCore Ledger & Command Central
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Restrito — MalhaCore Command</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/malhacore.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #070E1A;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: #0A1628;
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            padding: 32px;
+        }
+        .login-header {
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .login-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+        .login-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-top: 6px;
+            letter-spacing: -0.02em;
+        }
+        .login-sub {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        .login-form .form-group {
+            margin-bottom: 18px;
+        }
+        .login-form .form-label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+        .login-form .form-control {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-subtle);
+            color: #FFFFFF;
+            font-size: 13px;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .login-form .form-control:focus {
+            border-color: var(--accent-cyan);
+        }
+        .btn-entrar {
+            width: 100%;
+            background: var(--accent-cyan);
+            color: #021018;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 12px;
+            cursor: pointer;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: opacity 0.15s ease;
+            margin-top: 8px;
+        }
+        .btn-entrar:hover {
+            opacity: 0.92;
+        }
+        .alert-erro {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--status-inadimplente-border);
+            color: var(--status-inadimplente-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+        }
+        .login-footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <span class="login-badge">[ MALHACORE &bull; SISTEMA DE CONTROLE ]</span>
+            <h1 class="login-title">AUTENTICAÇÃO CENTRAL</h1>
+            <p class="login-sub">Painel restrito de auditoria financeira e telemetria de rede</p>
+        </div>
+
+        {% if erro %}
+        <div class="alert-erro">
+            [ERRO DE ACESSO]: {{ erro }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login" class="login-form">
+            <div class="form-group">
+                <label class="form-label" for="email">E-MAIL DO OPERADOR</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control mono" 
+                    value="{{ email or 'tiagoaraujoxsl@gmail.com' }}" 
+                    required 
+                    autocomplete="email"
+                    autofocus
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="senha">CHAVE DE ACESSO / SENHA</label>
+                <input 
+                    type="password" 
+                    id="senha" 
+                    name="senha" 
+                    class="form-control mono" 
+                    placeholder="••••••••••••" 
+                    required 
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="btn-entrar">
+                ENTRAR NO PAINEL DE CONTROLE &rarr;
+            </button>
+        </form>
+
+        <div class="login-footer">
+            PROTOCOLO SEGURO &bull; CRIPTOGRAFIA PBKDF2 &bull; MALHACORE v1.1
+        </div>
+    </div>
+</body>
+</html>
+

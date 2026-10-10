@@ -1,0 +1,1044 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- BARRA DE NAVEGAÇÃO ENTRE AS VISÕES DE COMANDO -->
+<nav class="view-nav">
+    <button class="view-nav-btn active" id="btnVisaoFinanceiro" onclick="mudarVisaoPrincipal('visaoFinanceiro')">
+        1. LEADS & FINANCEIRO
+        <span class="view-badge-count mono">{{ leads|length }}</span>
+    </button>
+    <button class="view-nav-btn" id="btnVisaoApps" onclick="mudarVisaoPrincipal('visaoApps')">
+        2. CENTRAL DE APPS
+        <span class="view-badge-count mono">{{ apps|length }}</span>
+    </button>
+    <button class="view-nav-btn" id="btnVisaoErros" onclick="mudarVisaoPrincipal('visaoErros')">
+        3. MONITOR DE ERROS & BUGS
+        {% if telemetria and telemetria.total_erros_ativos > 0 %}
+        <span class="view-badge-count mono" style="color: var(--status-inadimplente-text); font-weight: 700;">{{ telemetria.total_erros_ativos }} ATIVOS</span>
+        {% else %}
+        <span class="view-badge-count mono">0 ATIVOS</span>
+        {% endif %}
+    </button>
+    <button class="view-nav-btn" id="btnVisaoAcessos" onclick="mudarVisaoPrincipal('visaoAcessos')">
+        4. AUDITORIA DE ACESSOS
+        <span class="view-badge-count mono">{{ acessos|length }}</span>
+    </button>
+</nav>
+
+<!-- BANNER DE SINAIS PREDITIVOS DE ANOMALIAS -->
+{% if telemetria and telemetria.alertas_preditivos %}
+<section class="predictive-banner">
+    <div class="predictive-banner-title">
+        <span>[ TELEMETRIA PREDITIVA DE ANOMALIAS ]</span>
+        <span class="mono" style="font-size: 10px; color: var(--text-secondary);">OBSERVABILIDADE CENTRAL ATIVA</span>
+    </div>
+    {% for alerta in telemetria.alertas_preditivos %}
+    <div class="predictive-banner-item">{{ alerta }}</div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<!-- VISÃO 1: LEADS & CONTRATOS FINANCEIROS -->
+<div id="visaoFinanceiro" class="main-view active">
+<!-- INDICADORES EXECUTIVOS (TELEMETRIA FINANCEIRA) -->
+<section class="kpi-grid">
+    <div class="kpi-card geral">
+        <div class="kpi-label">TOTAL DE LEADS & CONTRATOS</div>
+        <div class="kpi-value mono">{{ resumo.total_leads }}</div>
+        <div class="kpi-meta">
+            <span>BASE CADASTRAL</span>
+            <span class="mono">{{ resumo.taxa_adimplencia }}% ADIMPLÊNCIA</span>
+        </div>
+    </div>
+
+    <div class="kpi-card pago">
+        <div class="kpi-label">FATURAMENTO LIQUIDADO [PAGOS]</div>
+        <div class="kpi-value mono" style="color: var(--status-pago-text);">
+            R$ {{ "{:,.2f}".format(resumo.faturamento_liquidado).replace(",", "X").replace(".", ",").replace("X", ".") }}
+        </div>
+        <div class="kpi-meta">
+            <span>{{ resumo.total_pagos }} CONTRATOS BAIXADOS</span>
+            <span class="mono">CONFIRMADO</span>
+        </div>
+    </div>
+
+    <div class="kpi-card pendente">
+        <div class="kpi-label">A RECEBER [EM CARTEIRA]</div>
+        <div class="kpi-value mono" style="color: var(--status-pendente-text);">
+            R$ {{ "{:,.2f}".format(resumo.faturamento_a_receber).replace(",", "X").replace(".", ",").replace("X", ".") }}
+        </div>
+        <div class="kpi-meta">
+            <span>{{ resumo.total_pendentes }} AGUARDANDO PAGAMENTO</span>
+            <span class="mono">PREVISTO</span>
+        </div>
+    </div>
+
+    <div class="kpi-card inadimplente">
+        <div class="kpi-label">EM ATRASO [INADIMPLÊNCIA]</div>
+        <div class="kpi-value mono" style="color: var(--status-inadimplente-text);">
+            R$ {{ "{:,.2f}".format(resumo.faturamento_em_atraso).replace(",", "X").replace(".", ",").replace("X", ".") }}
+        </div>
+        <div class="kpi-meta">
+            <span>{{ resumo.total_inadimplentes }} CONTRATOS VENCIDOS</span>
+            <span class="mono">COBRANÇA ATIVA</span>
+        </div>
+    </div>
+</section>
+
+<!-- PAINEL CENTRAL DE LOCALIZAÇÃO E CONTROLE -->
+<section class="ledger-panel">
+    <div class="ledger-header">
+        <div class="ledger-title-group">
+            <h2>PAINEL GERENCIAL DE LEADS & LIQUIDAÇÃO</h2>
+            <p>Auditoria operacional e localização de novos cadastros do app MalhaCore</p>
+        </div>
+        <div class="ledger-actions">
+            <button class="btn btn-primary" onclick="abrirModalNovoLead()">+ NOVO LEAD / CONTRATO</button>
+            <a href="/api/leads/exportar/csv" class="btn btn-outline-cyan">EXPORTAR LEDGER CSV</a>
+        </div>
+    </div>
+
+    <!-- BARRA DE BUSCA E FILTROS RÁPIDOS -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="inputBusca" 
+                class="search-input" 
+                placeholder="LOCALIZAR LEAD: RAZÃO SOCIAL, CNPJ, CONTATO, TELEFONE OU CÓDIGO..."
+                autocomplete="off"
+            >
+        </div>
+
+        <div class="filter-pills">
+            <button class="filter-pill active" data-status="TODOS">TODOS ({{ resumo.total_leads }})</button>
+            <button class="filter-pill" data-status="PAGO">PAGOS ({{ resumo.total_pagos }})</button>
+            <button class="filter-pill" data-status="PENDENTE">PENDENTES ({{ resumo.total_pendentes }})</button>
+            <button class="filter-pill" data-status="INADIMPLENTE">INADIMPLENTES ({{ resumo.total_inadimplentes }})</button>
+        </div>
+    </div>
+
+    <div style="padding: 6px 20px; background: rgba(7, 11, 18, 0.5); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; font-size: 10px; color: var(--text-tertiary);">
+        <span id="contadorRegistros" class="mono">{{ leads|length }} REGISTROS DISPONÍVEIS</span>
+        <span class="mono">ORDENAÇÃO: MAIS RECENTES PRIMEIRO</span>
+    </div>
+
+    <!-- TABELA PRINCIPAL -->
+    <div class="table-responsive">
+        <table class="ledger-table" id="tabelaLeads">
+            <thead>
+                <tr>
+                    <th>CÓDIGO</th>
+                    <th>EMPRESA / RAZÃO SOCIAL</th>
+                    <th>CNPJ / CPF</th>
+                    <th>CONTATO & TELEFONE</th>
+                    <th>ORIGEM</th>
+                    <th>MENSALIDADE</th>
+                    <th>VENCIMENTO</th>
+                    <th>STATUS LIQUIDAÇÃO</th>
+                    <th>MÉTODO</th>
+                    <th style="text-align: right;">AÇÕES DIRETAS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr 
+                    class="lead-row" 
+                    data-status="{{ lead.status_pagamento }}"
+                    data-search="{{ lead.razao_social }} {{ lead.nome_fantasia or '' }} {{ lead.documento }} {{ lead.contato_nome }} {{ lead.telefone }} {{ lead.email }} {{ lead.codigo }}"
+                >
+                    <td class="mono" style="font-weight: 700; color: var(--text-secondary);">
+                        {{ lead.codigo }}
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #FFFFFF;">{{ lead.razao_social }}</div>
+                        {% if lead.nome_fantasia and lead.nome_fantasia != lead.razao_social %}
+                        <div style="font-size: 11px; color: var(--text-secondary);">{{ lead.nome_fantasia }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="mono" style="color: var(--text-secondary); font-size: 11px;">
+                        {{ lead.documento }}
+                    </td>
+                    <td>
+                        <div style="color: var(--text-primary);">{{ lead.contato_nome }}</div>
+                        <div class="mono" style="font-size: 11px; color: var(--text-tertiary);">{{ lead.telefone }}</div>
+                    </td>
+                    <td>
+                        <span class="mono" style="font-size: 10px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.04); padding: 2px 6px; border: 1px solid var(--border-subtle);">
+                            {{ lead.origem }}
+                        </span>
+                    </td>
+                    <td class="mono" style="font-weight: 700;">
+                        R$ {{ "{:,.2f}".format(lead.valor_mensal).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                    </td>
+                    <td class="mono" style="font-size: 11px; color: var(--text-secondary);">
+                        {% if lead.status_pagamento == 'PAGO' %}
+                            <span style="color: var(--status-pago-text);">PAGO EM {{ lead.data_pagamento }}</span>
+                        {% elif lead.status_pagamento == 'INADIMPLENTE' %}
+                            <span style="color: var(--status-inadimplente-text);">ATRASO +{{ lead.dias_atraso }}D</span>
+                        {% else %}
+                            {{ lead.vencimento or "A DEFINIR" }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lead.status_pagamento == 'PAGO' %}
+                            <span class="badge-status pago">PAGO</span>
+                        {% elif lead.status_pagamento == 'PENDENTE' %}
+                            <span class="badge-status pendente">PENDENTE</span>
+                        {% elif lead.status_pagamento == 'INADIMPLENTE' %}
+                            <span class="badge-status inadimplente">INADIMPLENTE</span>
+                        {% else %}
+                            <span class="badge-status cancelado">{{ lead.status_pagamento }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="tag-method mono">{{ lead.metodo_pagamento }}</span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <button 
+                            class="btn btn-sm btn-outline-cyan" 
+                            onclick="abrirModalDetalhes({{ lead.id }})"
+                            title="Ver ficha completa e histórico de auditoria"
+                        >
+                            DETALHES
+                        </button>
+                        {% if lead.status_pagamento != 'PAGO' %}
+                            <button 
+                                class="btn btn-sm btn-outline-pago" 
+                                onclick="registrarBaixaPagamento({{ lead.id }}, '{{ lead.codigo }}')"
+                                title="Confirmar recebimento do pagamento"
+                            >
+                                BAIXA
+                            </button>
+                            <button 
+                                class="btn btn-sm" 
+                                onclick="enviarCobrancaWhatsApp('{{ lead.telefone }}', '{{ lead.razao_social }}', {{ lead.valor_mensal }}, '{{ lead.codigo }}')"
+                                title="Notificar via WhatsApp corporativo"
+                            >
+                                COBRAR
+                            </button>
+                        {% else %}
+                            <span class="mono" style="font-size: 10px; color: var(--status-pago-text); font-weight: 700; margin-left: 6px;">
+                                LIQUIDADO
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</div>
+
+<!-- ======================================================== -->
+<!-- VISÃO 2: CENTRAL DE APPS (CATÁLOGO & TELEMETRIA DE SAÚDE) -->
+<!-- ======================================================== -->
+<div id="visaoApps" class="main-view" style="display: none;">
+    <section class="ledger-panel">
+        <div class="ledger-header">
+            <div class="ledger-title-group">
+                <h2>CENTRAL DE APPS DO ECOSSISTEMA</h2>
+                <p>Monitoramento ativo de disponibilidade, pings e integridade operacional dos seus sistemas</p>
+            </div>
+            <div class="ledger-actions">
+                <button class="btn btn-primary" onclick="abrirModalConectarApp()">+ CONECTAR APP (SDK)</button>
+            </div>
+        </div>
+
+        <!-- KPIs DO CICLO DE VIDA DE APPS -->
+        <div style="padding: 20px 20px 0 20px;">
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+                <div class="kpi-card">
+                    <span class="kpi-label">TOTAL DE SISTEMAS</span>
+                    <div class="kpi-value">{{ apps|length }}</div>
+                    <span class="kpi-sub mono">ECOSSISTEMA CENTRAL</span>
+                </div>
+                <div class="kpi-card pago">
+                    <span class="kpi-label">NO AR NA REDE (PUBLICADOS)</span>
+                    <div class="kpi-value" style="color: var(--status-pago-text);">
+                        {{ apps|selectattr('estagio_deploy', 'equalto', 'PUBLICADO')|list|length }}
+                    </div>
+                    <span class="kpi-sub mono">DISPONIBILIDADE ATIVA</span>
+                </div>
+                <div class="kpi-card" style="border-left: 3px solid var(--accent-cyan);">
+                    <span class="kpi-label">EM ROLLOUT / PILOTO</span>
+                    <div class="kpi-value" style="color: var(--accent-cyan);">
+                        {{ apps|selectattr('estagio_deploy', 'equalto', 'ROLLOUT')|list|length }}
+                    </div>
+                    <span class="kpi-sub mono">EX: MALHAX (ACTIVIA)</span>
+                </div>
+                <div class="kpi-card pendente">
+                    <span class="kpi-label">EM PROGRAMAÇÃO (A PUBLICAR)</span>
+                    <div class="kpi-value" style="color: var(--status-pendente-text);">
+                        {{ apps|selectattr('estagio_deploy', 'equalto', 'DESENVOLVIMENTO')|list|length }}
+                    </div>
+                    <span class="kpi-sub mono">EM CONSTRUÇÃO</span>
+                </div>
+            </div>
+
+            <!-- BARRA DE CONTROLE: FILTROS E BUSCA DE APPS -->
+            <div class="ledger-controls" style="margin-bottom: 20px;">
+                <div class="filter-group" id="filtroPillsApps">
+                    <button class="filter-pill active" data-app-filtro="TODOS">TODOS OS APPS</button>
+                    <button class="filter-pill" data-app-filtro="PUBLICADO">NO AR NA REDE</button>
+                    <button class="filter-pill" data-app-filtro="ROLLOUT">EM ROLLOUT / PILOTO</button>
+                    <button class="filter-pill" data-app-filtro="DESENVOLVIMENTO">EM PROGRAMAÇÃO</button>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span id="contadorApps" class="mono" style="font-size: 11px; color: var(--text-tertiary);">
+                        {{ apps|length }} SISTEMAS CATALOGADOS
+                    </span>
+                    <input 
+                        type="text" 
+                        id="inputBuscaApps" 
+                        class="form-control" 
+                        placeholder="Buscar por app, cliente (ex: Activia, Shirlei) ou slug..." 
+                        style="width: 320px;"
+                    >
+                </div>
+            </div>
+
+            <!-- GRID DE APLICATIVOS -->
+            <div id="gridApps" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                {% for app in apps %}
+                <div 
+                    class="kpi-card app-card {{ 'inadimplente' if app.status == 'CRITICO' else ('pendente' if app.status == 'ALERTA' else 'pago') }}"
+                    data-estagio="{{ app.estagio_deploy }}"
+                    data-search="{{ app.nome }} {{ app.slug }} {{ app.cliente_piloto or '' }} {{ app.categoria }}"
+                    style="{{ 'border: 1px solid var(--accent-cyan); box-shadow: 0 0 15px rgba(0, 210, 211, 0.1);' if app.slug == 'malhax' else '' }}"
+                >
+                    <!-- CABEÇALHO DO CARD -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <span class="mono" style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">[{{ app.slug }}]</span>
+                                {% if app.slug == 'malhax' %}
+                                <span class="mono" style="font-size: 9px; font-weight: 800; background: var(--accent-cyan); color: #021018; padding: 1px 5px; border-radius: 2px;">
+                                    FLAGSHIP / CENTRAL
+                                </span>
+                                {% endif %}
+                                <span class="mono" style="font-size: 10px; color: var(--text-tertiary);">v{{ app.versao }}</span>
+                            </div>
+                            <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 3px;">{{ app.nome }}</h3>
+                            <span style="font-size: 10px; color: var(--text-tertiary); text-transform: uppercase;">{{ app.categoria }} | {{ app.ambiente }}</span>
+                        </div>
+
+                        <!-- BADGE DE ESTÁGIO DE DEPLOY -->
+                        <div>
+                            {% if app.estagio_deploy == 'PUBLICADO' %}
+                                <span class="badge-status pago" title="Aplicativo no ar na rede">NO AR NA REDE</span>
+                            {% elif app.estagio_deploy == 'ROLLOUT' %}
+                                <span class="badge-status" style="background: rgba(0, 210, 211, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);" title="Em implantação / piloto">
+                                    ROLLOUT / PILOTO
+                                </span>
+                            {% else %}
+                                <span class="badge-status pendente" title="Em fase de programação / a publicar">EM PROGRAMAÇÃO</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- CLIENTE PILOTO OU PARCEIRO -->
+                    <div style="margin-bottom: 8px; font-size: 11px;">
+                        <span style="color: var(--text-tertiary);">CLIENTE / PILOTO:</span>
+                        <strong class="mono" style="color: {{ 'var(--accent-cyan)' if app.slug == 'malhax' else '#FFFFFF' }}; margin-left: 4px;">
+                            {{ app.cliente_piloto or 'Ecossistema Interno' }}
+                        </strong>
+                    </div>
+
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; min-height: 32px; line-height: 1.4;">
+                        {{ app.descricao or 'Sem descrição informada.' }}
+                    </p>
+
+                    <!-- METRICAS DE SAUDE E AUDITORIA -->
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); padding: 8px 12px; margin-bottom: 12px; font-size: 11px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: var(--text-tertiary);">ERROS ATIVOS:</span>
+                            <span class="mono" style="font-weight: 700; color: {{ 'var(--status-inadimplente-text)' if app.total_erros_ativos > 0 else 'var(--status-pago-text)' }};">
+                                {{ app.total_erros_ativos }}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: var(--text-tertiary);">TOTAL ACESSOS:</span>
+                            <span class="mono" style="color: #FFFFFF;">{{ app.total_acessos }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-tertiary);">ÚLTIMO PING:</span>
+                            <span class="mono" style="font-size: 10px; color: var(--text-secondary);">
+                                {{ app.ultimo_ping.strftime('%d/%m %H:%M') if app.ultimo_ping else 'Nunca' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- URL / ACESSO -->
+                    <div style="margin-bottom: 10px; font-size: 10px;">
+                        {% if app.url_acesso %}
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="mono" style="color: var(--text-tertiary); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                URL: {{ app.url_acesso }}
+                            </span>
+                            <a href="{{ app.url_acesso }}" target="_blank" class="btn btn-sm" style="font-size: 9px; padding: 2px 6px; color: var(--accent-cyan); border-color: var(--accent-cyan);">
+                                ABRIR APP NO AR &nearr;
+                            </a>
+                        </div>
+                        {% else %}
+                        <span class="mono" style="color: var(--text-tertiary);">
+                            STATUS REDE: {{ 'Aguardando publicação / URL' if app.estagio_deploy == 'DESENVOLVIMENTO' else 'Piloto em fase de implantação' }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- BOTOES DE AÇÃO -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+                        {% if app.url_acesso %}
+                        <button class="btn btn-sm btn-outline-pago" onclick="checarHealthcheckOnline('{{ app.slug }}')" title="Executar ping HTTP na URL do app">
+                            CHECAR ONLINE
+                        </button>
+                        {% else %}
+                        <span class="mono" style="font-size: 9px; color: var(--text-tertiary);" title="Chave de API">
+                            KEY: {{ app.api_key[:12] if app.api_key else 'mc_live...' }}...
+                        </span>
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-cyan" onclick="filtrarErrosPorApp('{{ app.slug }}')">
+                            VER BUGS & ERROS
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================== -->
+<!-- VISÃO 3: MONITOR DE ERROS & BUGS (TELEMETRIA DE FALHAS)  -->
+<!-- ======================================================== -->
+<div id="visaoErros" class="main-view" style="display: none;">
+    <section class="ledger-panel">
+        <div class="ledger-header">
+            <div class="ledger-title-group">
+                <h2>MONITOR CENTRAL DE ERROS & ANOMALIAS</h2>
+                <p>Captura de exceções, stack traces, impacto por cliente e resolução preventiva</p>
+            </div>
+            <div class="ledger-actions">
+                <span class="mono" style="font-size: 11px; color: var(--text-secondary);" id="contadorErros">{{ erros|length }} REGISTROS COLETADOS</span>
+            </div>
+        </div>
+
+        <div class="search-filter-bar">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="inputBuscaErros" 
+                    class="search-input" 
+                    placeholder="LOCALIZAR ERRO: TIPO, MENSAGEM, ROTA, FUNÇÃO OU CLIENTE AFETADO..."
+                    autocomplete="off"
+                >
+            </div>
+            <div class="filter-pills" id="filtroPillsErros">
+                <button class="filter-pill active" data-erro-filtro="TODOS">TODOS ({{ erros|length }})</button>
+                <button class="filter-pill" data-erro-filtro="CRITICAL">CRÍTICOS</button>
+                <button class="filter-pill" data-erro-filtro="ERROR">ERROS</button>
+                <button class="filter-pill" data-erro-filtro="WARNING">AVISOS</button>
+                <button class="filter-pill" data-erro-filtro="NOVO">NOVOS</button>
+                <button class="filter-pill" data-erro-filtro="RESOLVIDO">RESOLVIDOS</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="ledger-table" id="tabelaErros">
+                <thead>
+                    <tr>
+                        <th>DATA / HORA</th>
+                        <th>APP</th>
+                        <th>NÍVEL</th>
+                        <th>TIPO DE ERRO & MENSAGEM</th>
+                        <th>ROTA / FUNÇÃO</th>
+                        <th>CLIENTE AFETADO</th>
+                        <th>RECORRÊNCIAS</th>
+                        <th>STATUS</th>
+                        <th style="text-align: right;">AÇÃO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for err in erros %}
+                    <tr 
+                        class="erro-row"
+                        data-nivel="{{ err.nivel }}"
+                        data-status="{{ err.status }}"
+                        data-app="{{ err.app_slug }}"
+                        data-search="{{ err.app_nome or '' }} {{ err.tipo_erro }} {{ err.mensagem }} {{ err.rota_ou_funcao or '' }} {{ err.cliente_afetado or '' }} {{ err.usuario_afetado or '' }}"
+                    >
+                        <td class="mono" style="font-size: 10px; color: var(--text-secondary); white-space: nowrap;">
+                            {{ err.atualizado_em.strftime('%d/%m %H:%M') if err.atualizado_em else (err.criado_em.strftime('%d/%m %H:%M') if err.criado_em else '-') }}
+                        </td>
+                        <td>
+                            <span class="mono" style="font-size: 10px; font-weight: 700; color: var(--accent-cyan);">{{ err.app_slug }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-nivel {{ err.nivel.lower() }}">{{ err.nivel }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #FFFFFF;">{{ err.tipo_erro }}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ err.mensagem }}
+                            </div>
+                        </td>
+                        <td class="mono" style="font-size: 11px; color: var(--text-primary);">
+                            {{ err.rota_ou_funcao or 'rotina interna' }}
+                        </td>
+                        <td>
+                            {% if err.cliente_afetado %}
+                                <div style="color: var(--status-inadimplente-text); font-weight: 600;">{{ err.cliente_afetado }}</div>
+                                {% if err.usuario_afetado %}
+                                <div class="mono" style="font-size: 10px; color: var(--text-tertiary);">{{ err.usuario_afetado }}</div>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-tertiary); font-size: 11px;">Não especificado</span>
+                            {% endif %}
+                        </td>
+                        <td class="mono" style="font-weight: 700; text-align: center;">
+                            {% if err.recorrencias > 1 %}
+                                <span style="color: var(--status-inadimplente-text);">{{ err.recorrencias }}x</span>
+                            {% else %}
+                                1x
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if err.status == 'NOVO' %}
+                                <span class="badge-status inadimplente">NOVO</span>
+                            {% elif err.status == 'EM_ANALISE' %}
+                                <span class="badge-status pendente">EM ANÁLISE</span>
+                            {% else %}
+                                <span class="badge-status pago">RESOLVIDO</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button class="btn btn-sm btn-outline-cyan" onclick="abrirModalInspecionarErro({{ err.id }})">
+                                INSPECIONAR BUG
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================== -->
+<!-- VISÃO 4: AUDITORIA DE ACESSOS (QUEM ACESSOU O QUÊ)       -->
+<!-- ======================================================== -->
+<div id="visaoAcessos" class="main-view" style="display: none;">
+    <section class="ledger-panel">
+        <div class="ledger-header">
+            <div class="ledger-title-group">
+                <h2>TRILHA DE AUDITORIA & REGISTRO DE ACESSOS</h2>
+                <p>Auditoria operacional em tempo real de requisições, usuários e tempo de resposta em todos os apps</p>
+            </div>
+            <div class="ledger-actions">
+                <span class="mono" style="font-size: 11px; color: var(--text-secondary);" id="contadorAcessos">{{ acessos|length }} ACESSOS AUDITADOS</span>
+            </div>
+        </div>
+
+        <div class="search-filter-bar">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="inputBuscaAcessos" 
+                    class="search-input" 
+                    placeholder="LOCALIZAR ACESSO: USUÁRIO, CLIENTE, ROTA OU IP..."
+                    autocomplete="off"
+                >
+            </div>
+            <div class="filter-pills" id="filtroPillsAcessos">
+                <button class="filter-pill active" data-acesso-filtro="TODOS">TODOS ({{ acessos|length }})</button>
+                <button class="filter-pill" data-acesso-filtro="SUCESSO">SUCESSO (2xx)</button>
+                <button class="filter-pill" data-acesso-filtro="ERRO">FALHAS (4xx/5xx)</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="ledger-table" id="tabelaAcessos">
+                <thead>
+                    <tr>
+                        <th>DATA / HORA</th>
+                        <th>APP</th>
+                        <th>USUÁRIO</th>
+                        <th>CLIENTE / EMPRESA</th>
+                        <th>ROTA / ENDPOINT</th>
+                        <th>MÉTODO</th>
+                        <th>STATUS HTTP</th>
+                        <th>LATÊNCIA</th>
+                        <th>IP ORIGEM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acc in acessos %}
+                    <tr 
+                        class="acesso-row"
+                        data-status="{{ acc.status_code }}"
+                        data-app="{{ acc.app_slug }}"
+                        data-search="{{ acc.app_nome or '' }} {{ acc.usuario or '' }} {{ acc.cliente_identificador or '' }} {{ acc.rota }} {{ acc.ip_origem or '' }}"
+                    >
+                        <td class="mono" style="font-size: 10px; color: var(--text-secondary); white-space: nowrap;">
+                            {{ acc.criado_em.strftime('%d/%m %H:%M:%S') if acc.criado_em else '-' }}
+                        </td>
+                        <td>
+                            <span class="mono" style="font-size: 10px; font-weight: 700; color: var(--accent-cyan);">{{ acc.app_slug }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ acc.usuario or 'Anônimo' }}</div>
+                        </td>
+                        <td>
+                            {% if acc.cliente_identificador %}
+                                <span style="color: #FFFFFF; font-weight: 600;">{{ acc.cliente_identificador }}</span>
+                            {% else %}
+                                <span style="color: var(--text-tertiary); font-size: 11px;">Geral</span>
+                            {% endif %}
+                        </td>
+                        <td class="mono" style="font-size: 11px; color: var(--text-primary);">
+                            {{ acc.rota }}
+                        </td>
+                        <td>
+                            <span class="mono" style="font-size: 10px; color: var(--text-secondary);">{{ acc.metodo }}</span>
+                        </td>
+                        <td>
+                            {% if acc.status_code < 400 %}
+                                <span class="badge-status pago" style="font-size: 10px; padding: 2px 6px;">{{ acc.status_code }} OK</span>
+                            {% elif acc.status_code < 500 %}
+                                <span class="badge-status pendente" style="font-size: 10px; padding: 2px 6px;">{{ acc.status_code }}</span>
+                            {% else %}
+                                <span class="badge-status inadimplente" style="font-size: 10px; padding: 2px 6px;">{{ acc.status_code }} ERRO</span>
+                            {% endif %}
+                        </td>
+                        <td class="mono" style="font-size: 11px; color: {{ 'var(--status-inadimplente-text)' if acc.tempo_resposta_ms > 1000 else 'var(--text-secondary)' }};">
+                            {{ acc.tempo_resposta_ms }}ms
+                        </td>
+                        <td class="mono" style="font-size: 10px; color: var(--text-tertiary);">
+                            {{ acc.ip_origem or '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+
+<!-- MODAL DE NOVO LEAD / CONTRATO -->
+<div id="modalNovoLead" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>REGISTRAR NOVO CONTRATO / LEAD MALHACORE</h3>
+            <button class="btn btn-sm" onclick="fecharModalNovoLead()">FECHAR</button>
+        </div>
+        <form id="formNovoLead">
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label class="form-label">RAZÃO SOCIAL / EMPRESA</label>
+                        <input type="text" name="razao_social" class="form-control" required placeholder="Ex: TransNordeste Logística Ltda">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">NOME FANTASIA (OPCIONAL)</label>
+                        <input type="text" name="nome_fantasia" class="form-control" placeholder="Ex: TransNordeste">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">CNPJ OU CPF</label>
+                        <input type="text" name="documento" class="form-control mono" required placeholder="00.000.000/0001-00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">NOME DO CONTATO / RESPONSÁVEL</label>
+                        <input type="text" name="contato_nome" class="form-control" required placeholder="Ex: Roberto Andrade">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">CARGO</label>
+                        <input type="text" name="contato_cargo" class="form-control" placeholder="Ex: Diretor de Operações">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">E-MAIL CORPORATIVO</label>
+                        <input type="email" name="email" class="form-control" required placeholder="contato@empresa.com.br">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">WHATSAPP / TELEFONE</label>
+                        <input type="text" name="telefone" class="form-control mono" required placeholder="(11) 90000-0000">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">ORIGEM DO LEAD</label>
+                        <select name="origem" class="form-control">
+                            <option value="App MalhaCore">App MalhaCore</option>
+                            <option value="Inbound Enterprise">Inbound Enterprise</option>
+                            <option value="Checkout Direto">Checkout Direto</option>
+                            <option value="Indicação Comercial">Indicação Comercial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">PLANO DO SISTEMA</label>
+                        <select name="plano" class="form-control">
+                            <option value="Malha Enterprise Fleet">Malha Enterprise Fleet</option>
+                            <option value="Malha Enterprise Ultra">Malha Enterprise Ultra</option>
+                            <option value="Core Pro Hub">Core Pro Hub</option>
+                            <option value="Core Standard Fleet">Core Standard Fleet</option>
+                            <option value="Core Starter">Core Starter</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">VALOR MENSAL (R$)</label>
+                        <input type="number" step="0.01" name="valor_mensal" class="form-control mono" required placeholder="4500.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">STATUS INICIAL</label>
+                        <select name="status_pagamento" class="form-control">
+                            <option value="PENDENTE">PENDENTE (Aguardando)</option>
+                            <option value="PAGO">PAGO (Já Liquidado)</option>
+                            <option value="INADIMPLENTE">INADIMPLENTE (Vencido)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">MÉTODO DE PAGAMENTO</label>
+                        <select name="metodo_pagamento" class="form-control">
+                            <option value="PIX">PIX</option>
+                            <option value="BOLETO">BOLETO BANCÁRIO</option>
+                            <option value="CARTAO">CARTÃO DE CRÉDITO</option>
+                            <option value="TED">TED / TRANSFERÊNCIA</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">DATA DE VENCIMENTO</label>
+                        <input type="date" name="vencimento" class="form-control mono">
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label class="form-label">OBSERVAÇÕES INTERNAS / AUDITORIA</label>
+                        <textarea name="observacoes" class="form-control" rows="2" placeholder="Notas sobre a negociação..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="fecharModalNovoLead()">CANCELAR</button>
+                <button type="submit" class="btn btn-primary">REGISTRAR CONTRATO</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE DETALHES, AUDITORIA E EDIÇÃO DO LEAD -->
+<div id="modalDetalhesLead" class="modal-overlay">
+    <div class="modal-card modal-lg">
+        <div class="modal-header">
+            <div>
+                <span id="detalhesCodigoBadge" class="mono" style="font-weight: 800; color: var(--accent-cyan); font-size: 14px;">MC-0000-0000</span>
+                <span id="detalhesRazaoTitulo" style="color: #FFFFFF; font-weight: 700; margin-left: 10px; font-size: 13px;">NOME DA EMPRESA</span>
+            </div>
+            <button class="btn btn-sm" onclick="fecharModalDetalhes()">FECHAR</button>
+        </div>
+
+        <nav class="tabs-nav">
+            <button class="tab-btn active" id="tabBtnFicha" onclick="trocarAbaDetalhes('abaFicha')">1. FICHA CADASTRAL</button>
+            <button class="tab-btn" id="tabBtnStatus" onclick="trocarAbaDetalhes('abaStatus')">2. LIQUIDAÇÃO & STATUS</button>
+            <button class="tab-btn" id="tabBtnAuditoria" onclick="trocarAbaDetalhes('abaAuditoria')">3. AUDITORIA FINANCEIRA</button>
+        </nav>
+
+        <!-- ABA 1: FICHA CADASTRAL -->
+        <div id="abaFicha" class="tab-content active">
+            <form id="formEditarLead">
+                <input type="hidden" id="editLeadId" name="lead_id">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group col-span-2">
+                            <label class="form-label">RAZÃO SOCIAL / EMPRESA</label>
+                            <input type="text" id="editRazaoSocial" name="razao_social" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">NOME FANTASIA</label>
+                            <input type="text" id="editNomeFantasia" name="nome_fantasia" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CNPJ OU CPF</label>
+                            <input type="text" id="editDocumento" name="documento" class="form-control mono" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CONTATO / RESPONSÁVEL</label>
+                            <input type="text" id="editContatoNome" name="contato_nome" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CARGO</label>
+                            <input type="text" id="editContatoCargo" name="contato_cargo" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">E-MAIL CORPORATIVO</label>
+                            <input type="email" id="editEmail" name="email" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">WHATSAPP / TELEFONE</label>
+                            <input type="text" id="editTelefone" name="telefone" class="form-control mono" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">ORIGEM DO LEAD</label>
+                            <input type="text" id="editOrigem" name="origem" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">PLANO DO SISTEMA</label>
+                            <input type="text" id="editPlano" name="plano" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">VALOR MENSAL (R$)</label>
+                            <input type="number" step="0.01" id="editValorMensal" name="valor_mensal" class="form-control mono" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">DATA DE VENCIMENTO</label>
+                            <input type="date" id="editVencimento" name="vencimento" class="form-control mono">
+                        </div>
+
+                        <div class="form-group col-span-2">
+                            <label class="form-label">OBSERVAÇÕES INTERNAS & NEGOCIAÇÃO</label>
+                            <textarea id="editObservacoes" name="observacoes" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-danger" onclick="excluirLeadAtual()">EXCLUIR CONTRATO</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn" onclick="fecharModalDetalhes()">CANCELAR</button>
+                        <button type="submit" class="btn btn-primary">SALVAR DADOS CADASTRAIS</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ABA 2: LIQUIDAÇÃO & STATUS -->
+        <div id="abaStatus" class="tab-content">
+            <form id="formAlterarStatus">
+                <div class="modal-body">
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); padding: 14px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="mono" style="font-size: 11px; color: var(--text-tertiary);">STATUS ATUAL NO LEDGER:</span>
+                            <span id="detalhesStatusBadge" class="badge-status"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-secondary);">DATA DE LIQUIDAÇÃO:</span>
+                            <span id="detalhesDataPagamento" class="mono" style="color: #FFFFFF;">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px;">
+                            <span style="color: var(--text-secondary);">DIAS EM ATRASO:</span>
+                            <span id="detalhesDiasAtraso" class="mono" style="color: #FFFFFF;">0 DIAS</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">NOVO STATUS FINANCEIRO</label>
+                            <select id="novoStatusSelect" name="status_pagamento" class="form-control" required>
+                                <option value="PAGO">PAGO (Liquidado com sucesso)</option>
+                                <option value="PENDENTE">PENDENTE (Aguardando compensação)</option>
+                                <option value="INADIMPLENTE">INADIMPLENTE (Cobrança em atraso)</option>
+                                <option value="CANCELADO">CANCELADO (Contrato cancelado)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">MÉTODO DE PAGAMENTO</label>
+                            <select id="novoMetodoSelect" name="metodo_pagamento" class="form-control">
+                                <option value="PIX">PIX</option>
+                                <option value="BOLETO">BOLETO BANCÁRIO</option>
+                                <option value="CARTAO">CARTÃO DE CRÉDITO</option>
+                                <option value="TED">TED / TRANSFERÊNCIA</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-span-2">
+                            <label class="form-label">JUSTIFICATIVA / MOTIVO PARA AUDITORIA (OBRIGATÓRIO)</label>
+                            <input type="text" id="novoMotivoStatus" name="motivo_baixa" class="form-control" required placeholder="Ex: Comprovante PIX recebido via WhatsApp / Negociação de vencimento">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="fecharModalDetalhes()">CANCELAR</button>
+                    <button type="submit" class="btn btn-primary">REGISTRAR MUDANÇA NO LEDGER</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ABA 3: TRILHA DE AUDITORIA -->
+        <div id="abaAuditoria" class="tab-content">
+            <div class="modal-body" style="padding: 0;">
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>DATA/HORA</th>
+                                <th>EVENTO</th>
+                                <th>DE &rarr; PARA</th>
+                                <th>VALOR</th>
+                                <th>RESPONSÁVEL</th>
+                                <th>DETALHES / JUSTIFICATIVA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaAuditoriaLead">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="fecharModalDetalhes()">FECHAR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE INSPEÇÃO DE ERRO & BUG -->
+<div id="modalInspecionarErro" class="modal-overlay">
+    <div class="modal-card modal-lg">
+        <div class="modal-header">
+            <div>
+                <span class="mono" style="font-weight: 800; color: var(--status-inadimplente-text); font-size: 13px;">INSPEÇÃO DE ANOMALIA #<span id="inspErroId"></span></span>
+                <span id="inspAppNomeTitulo" class="mono" style="color: #FFFFFF; margin-left: 10px; font-weight: 700;"></span>
+            </div>
+            <button class="btn btn-sm" onclick="fecharModalInspecionarErro()">FECHAR</button>
+        </div>
+
+        <div class="modal-body">
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); padding: 14px; margin-bottom: 16px;">
+                <div class="form-grid">
+                    <div>
+                        <span class="form-label">TIPO DE EXCEÇÃO</span>
+                        <div id="inspTipoErro" class="mono" style="font-size: 13px; font-weight: 700; color: #FFFFFF;"></div>
+                    </div>
+                    <div>
+                        <span class="form-label">SEVERIDADE & STATUS</span>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                            <span id="inspNivelBadge" class="badge-nivel"></span>
+                            <span id="inspStatusBadge" class="badge-status"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="form-label">ROTA / FUNÇÃO ORIGEM</span>
+                        <div id="inspRota" class="mono" style="font-size: 11px; color: var(--text-primary);"></div>
+                    </div>
+                    <div>
+                        <span class="form-label">CLIENTE IMPACTADO</span>
+                        <div id="inspCliente" style="font-size: 12px; font-weight: 700; color: var(--status-inadimplente-text);"></div>
+                    </div>
+                    <div>
+                        <span class="form-label">USUÁRIO AFETADO</span>
+                        <div id="inspUsuario" class="mono" style="font-size: 11px; color: var(--text-secondary);"></div>
+                    </div>
+                    <div>
+                        <span class="form-label">CONTAGEM DE REPETIÇÕES</span>
+                        <div id="inspRecorrencias" class="mono" style="font-size: 12px; font-weight: 700; color: #FFFFFF;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">MENSAGEM DE ERRO</label>
+                <div id="inspMensagem" style="padding: 10px 14px; background: rgba(239, 68, 68, 0.05); border: 1px solid var(--status-inadimplente-border); color: #FFFFFF; font-size: 12px; font-weight: 600;"></div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="form-label">STACK TRACE COMPLETO (PYTHON TRACEBACK)</label>
+                <pre id="inspTraceback" class="code-traceback">Sem traceback registrado.</pre>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                <label class="form-label">NOTA DE RESOLUÇÃO / SOLUÇÃO DO BUG</label>
+                <input type="text" id="inspSolucaoNota" class="form-control" placeholder="Descreva o que foi corrigido no código ou motivo da resolução...">
+            </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn" onclick="fecharModalInspecionarErro()">FECHAR</button>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-outline-cyan" onclick="atualizarStatusErroAtual('EM_ANALISE')">
+                    MARCAR COMO EM ANÁLISE
+                </button>
+                <button type="button" class="btn btn-primary" onclick="atualizarStatusErroAtual('RESOLVIDO')">
+                    MARCAR COMO RESOLVIDO
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE COMO CONECTAR OUTROS APPS VIA SDK -->
+<div id="modalConectarApp" class="modal-overlay">
+    <div class="modal-card modal-lg">
+        <div class="modal-header">
+            <h3>COMO CONECTAR QUALQUER APP NA CENTRAL MALHACORE</h3>
+            <button class="btn btn-sm" onclick="fecharModalConectarApp()">FECHAR</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-secondary); margin-bottom: 14px; font-size: 12px;">
+                O MalhaCore inclui um SDK universal sem dependências externas em <code>sdk/malhacore_client.py</code>. Copie o arquivo para a raiz do seu aplicativo e inicialize:
+            </p>
+
+            <div style="margin-bottom: 12px;">
+                <span class="mono" style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">OPÇÃO A: APLICATIVO FLASK (EX: 01.SHIRLEI)</span>
+                <pre class="code-traceback" style="color: #FFFFFF; max-height: 180px; margin-top: 4px;">
+from malhacore_client import MalhaCoreMonitor
+
+# Inicializa o monitor e conecta ao Flask com 1 comando
+monitor = MalhaCoreMonitor(
+    app_slug="01-clinicas", 
+    app_nome="01.Clínicas — Dra. Shirlei Elisabete",
+    server_url="http://127.0.0.1:8000"  # ou URL da sua VPS/Central
+)
+monitor.init_flask(app, cliente_padrao="Dra. Shirlei Elisabete")
+# Pronto! Captura acessos, tempos de resposta, usuários autenticados e exceções 500 sem travar o app.
+                </pre>
+            </div>
+
+            <div>
+                <span class="mono" style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">OPÇÃO B: QUALQUER PYTHON / SCRIPTS / FASTAPI</span>
+                <pre class="code-traceback" style="color: #FFFFFF; max-height: 180px; margin-top: 4px;">
+from malhacore_client import MalhaCoreMonitor
+
+monitor = MalhaCoreMonitor(app_slug="meu-app-exemplo", server_url="http://127.0.0.1:8000")
+
+# Capturar erros manuais em qualquer bloco de código:
+try:
+    executar_rotina()
+except Exception as erro:
+    monitor.capturar_excecao(erro, cliente="Cliente Alfa", rota="/processar")
+
+# Registrar acessos manuais:
+monitor.registrar_acesso(rota="/login", usuario="usuario@email.com", status_code=200)
+                </pre>
+            </div>
+
+            <div style="margin-top: 14px; padding: 10px; background: rgba(0, 210, 211, 0.05); border: 1px solid var(--border-subtle); font-size: 11px;">
+                <strong>Registro Automático:</strong> Não é necessário pré-cadastrar o aplicativo no banco. Ao enviar o primeiro acesso, erro ou ping, o MalhaCore cataloga o app instantaneamente na central. Se possuir uma URL pública, adicione-a no cadastro para habilitar o botão <em>[ CHECAR ONLINE ]</em>.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="fecharModalConectarApp()">ENTENDIDO</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
