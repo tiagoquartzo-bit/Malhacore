@@ -23,6 +23,10 @@
         4. AUDITORIA DE ACESSOS
         <span class="view-badge-count mono">{{ acessos|length }}</span>
     </button>
+    <button class="view-nav-btn" id="btnVisaoCopilot" onclick="mudarVisaoPrincipal('visaoCopilot')">
+        🤖 5. COPILOT IA
+        <span class="view-badge-count mono" style="color: var(--accent-cyan); font-weight: 700;">ONLINE</span>
+    </button>
 </nav>
 
 <!-- BANNER DE SINAIS PREDITIVOS DE ANOMALIAS -->
@@ -636,6 +640,66 @@
         </div>
     </section>
 </div>
+
+<!-- VISÃO 5: COPILOT IA (CONSULTAS INTELIGENTES EM TEMPO REAL) -->
+<div id="visaoCopilot" class="main-view" style="display: none;">
+    <section class="ledger-panel">
+        <div class="ledger-header">
+            <div class="ledger-title-group">
+                <h2>🤖 COPILOT IA MALHACORE // CONSULTA À BASE DE DADOS</h2>
+                <p>Assistente amarrado diretamente ao banco de dados SQLite para responder dúvidas sobre contratos, faturamento e sistemas (100% gratuito, sem áudio).</p>
+            </div>
+            <div class="ledger-actions">
+                <button class="btn btn-outline-cyan" onclick="limparChatCopilotView()">LIMPAR CONVERSA</button>
+            </div>
+        </div>
+
+        <div style="padding: 20px;">
+            <div class="copilot-card">
+                <!-- Atalhos Rápidos -->
+                <div class="copilot-pills-bar">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; margin-right: 6px;">CONSULTAS RÁPIDAS:</span>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Resumo financeiro da carteira')">💰 Resumo Financeiro</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Quais clientes estão pendentes a receber?')">⏳ Clientes Pendentes</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Quem são todos os meus clientes e quanto pagam?')">📋 Lista de Clientes</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Tem algum contrato inadimplente em atraso?')">⚠️ Inadimplentes</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como estão os sistemas da Central de Apps?')">🌐 Central de Apps</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como está o contrato da Activia Logística?')">🏢 Activia (MalhaX)</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como está o contrato da Dra. Shirlei?')">🩺 Dra. Shirlei</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Tem algum erro ou anomalia ativa?')">🛡️ Erros e Bugs</button>
+                </div>
+
+                <!-- Mensagens do Chat -->
+                <div class="copilot-messages" id="copilotViewMensagens">
+                    <div class="copilot-bubble assistant">
+                        <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
+                            COPILOT MALHACORE — STATUS: CONECTADO À BASE DE DADOS
+                        </div>
+                        <div>
+                            Olá Tiago! Sou seu Copilot de inteligência artificial amarrado diretamente ao banco de dados SQLite local.
+                            <br><br>
+                            Você pode me perguntar qualquer coisa sobre a operação (ex: <em>"Quanto temos a receber?"</em>, <em>"Quais clientes estão pendentes?"</em>, <em>"Como está o contrato da Activia?"</em> ou <em>"Como estão os apps?"</em>).
+                            <br><br>
+                            <strong>Sem áudio ou fala: respostas em texto formatadas, rápidas e precisas.</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulário de Pergunta -->
+                <form id="formCopilotView" onsubmit="submeterConsultaCopilotView(event)" class="copilot-input-bar">
+                    <input 
+                        type="text" 
+                        id="inputCopilotView" 
+                        placeholder="Digite sua pergunta (Ex: Quem deve mais? Quanto foi liquidado? Detalhes da Dra. Shirlei)..." 
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;">PERGUNTAR AO COPILOT</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+
 
 
 <!-- MODAL DE NOVO LEAD / CONTRATO -->

@@ -8,6 +8,7 @@ from .lead_service import (
 )
 from .seed_data import seed_database
 from . import auth_service
+from . import ia_service
 
 __all__ = [
     "listar_leads",
@@ -18,5 +19,6 @@ __all__ = [
     "gerar_csv_exportacao",
     "seed_database",
     "auth_service",
+    "ia_service",
 ]
 

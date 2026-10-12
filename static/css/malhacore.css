@@ -778,7 +778,189 @@ body {
 }
 
 /* ==========================================================================
-   BRIEFING EXECUTIVO IA & VOZ (MALHACORE INTELLIGENCE)
+   COPILOT IA MALHACORE (CONSULTA GRATUITA À BASE DE DADOS - SEM ÁUDIO)
+   ========================================================================== */
+
+.btn-copilot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(0, 210, 211, 0.2), rgba(37, 99, 235, 0.25));
+  border: 1px solid var(--accent-cyan);
+  color: #FFFFFF;
+  padding: 6px 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 12px rgba(0, 210, 211, 0.25);
+}
+
+.btn-copilot:hover {
+  background: linear-gradient(135deg, rgba(0, 210, 211, 0.35), rgba(37, 99, 235, 0.4));
+  box-shadow: 0 0 20px rgba(0, 210, 211, 0.45);
+  transform: translateY(-1px);
+}
+
+.copilot-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+/* Painel e Interface do Copilot */
+.copilot-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.copilot-header {
+  padding: 16px 20px;
+  background: var(--bg-core);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copilot-messages {
+  padding: 20px;
+  min-height: 380px;
+  max-height: 540px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(3, 7, 14, 0.6);
+}
+
+.copilot-bubble {
+  max-width: 88%;
+  padding: 14px 18px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.copilot-bubble.user {
+  align-self: flex-end;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-blue);
+  color: #FFFFFF;
+}
+
+.copilot-bubble.assistant {
+  align-self: flex-start;
+  background: #090F1C;
+  border: 1px solid rgba(0, 210, 211, 0.4);
+  border-left: 4px solid var(--accent-cyan);
+  color: #F8FAFC;
+}
+
+.copilot-bubble h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  margin-top: 0;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+.copilot-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.copilot-bubble th {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  text-align: left;
+}
+
+.copilot-bubble td {
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.copilot-bubble ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.copilot-bubble li {
+  margin-bottom: 4px;
+}
+
+.copilot-pills-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-core);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.copilot-pill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.copilot-pill:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.copilot-input-bar {
+  padding: 14px 20px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 10px;
+}
+
+.copilot-input-bar input {
+  flex: 1;
+  background: var(--bg-core);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 4px;
+  outline: none;
+}
+
+.copilot-input-bar input:focus {
+  border-color: var(--accent-cyan);
+}
+
+/* ==========================================================================
+   BRIEFING EXECUTIVO IA (MALHACORE INTELLIGENCE)
    ========================================================================== */
 
 .btn-ia-briefing {

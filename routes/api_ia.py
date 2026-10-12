@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database.connection import get_db
-from services import lead_service, telemetria_service
+from services import lead_service, telemetria_service, ia_service
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-router = APIRouter(prefix="/api/ia", tags=["Inteligência & Briefing IA"])
+router = APIRouter(prefix="/api/ia", tags=["Copilot & Inteligência IA"])
 
 
 class PerguntaIARequest(BaseModel):
     pergunta: str
+    api_key: Optional[str] = None
 
 
 def formatar_moeda_fala(valor: float) -> str:
@@ -23,7 +24,7 @@ def formatar_moeda_fala(valor: float) -> str:
 
 @router.get("/briefing")
 def obter_briefing_executivo(db: Session = Depends(get_db)) -> Dict[str, Any]:
-    """Gera diagnóstico e relatório inteligente de voz e texto do ecossistema MalhaCore."""
+    """Gera diagnóstico e relatório inteligente do ecossistema MalhaCore."""
     resumo_fin = lead_service.obter_resumo_financeiro(db)
     leads = lead_service.listar_leads(db)
     apps = telemetria_service.listar_apps(db)
@@ -43,7 +44,6 @@ def obter_briefing_executivo(db: Session = Depends(get_db)) -> Dict[str, Any]:
     hora_atual = datetime.now().hour
     saudacao = "Bom dia" if 5 <= hora_atual < 12 else ("Boa tarde" if 12 <= hora_atual < 18 else "Boa noite")
 
-    # Construção de roteiro falado em linguagem natural fluida
     texto_fala = (
         f"{saudacao}, Tiago. Central MalhaCore operacional e conectada. "
         f"Atualmente temos {total_leads} contratos na base, com faturamento total em carteira de R$ {total_carteira:,.2f}. "
@@ -68,7 +68,6 @@ def obter_briefing_executivo(db: Session = Depends(get_db)) -> Dict[str, Any]:
 
     texto_fala += " Todos os módulos estão prontos para a sua condução operacional."
 
-    # Diagnóstico textual executivo
     return {
         "status": "OPERACIONAL_ESTAVEL" if len(erros_criticos) == 0 else "ATENCAO_OPERACIONAL",
         "saudacao": saudacao,
@@ -121,37 +120,15 @@ def obter_briefing_executivo(db: Session = Depends(get_db)) -> Dict[str, Any]:
 
 
 @router.post("/perguntar")
+@router.post("/copilot")
 def consultar_ia(dados: PerguntaIARequest, db: Session = Depends(get_db)) -> Dict[str, Any]:
-    """Responde dúvidas do operador sobre contratos, valores ou saúde dos apps."""
-    pergunta_lower = dados.pergunta.lower()
-    resumo_fin = lead_service.obter_resumo_financeiro(db)
-    leads = lead_service.listar_leads(db)
-    apps = telemetria_service.listar_apps(db)
+    """Consulta o Copilot MalhaCore (100% gratuito, sem voz, integrado à base de dados)."""
+    resultado = ia_service.consultar_copilot(
+        db=db,
+        pergunta=dados.pergunta,
+        api_key_override=dados.api_key
+    )
+    resultado["timestamp"] = datetime.now().strftime("%H:%M:%S")
+    return resultado
 
-    # Análise de intenções inteligente
-    if any(k in pergunta_lower for k in ["receber", "previsto", "falta", "saldo"]):
-        resposta = f"Você tem R$ {resumo_fin.faturamento_a_receber:,.2f} previstos a receber em carteira neste ciclo, distribuídos entre os contratos pendentes."
-    elif any(k in pergunta_lower for k in ["liquidado", "pago", "entrou", "recebido", "caiu"]):
-        resposta = f"O faturamento liquidado até o momento é de R$ {resumo_fin.faturamento_liquidado:,.2f}, totalmente confirmado via PIX."
-    elif any(k in pergunta_lower for k in ["activia", "malhax", "logistica"]):
-        lead_activia = next((l for l in leads if "activia" in l.razao_social.lower()), None)
-        valor = f"R$ {lead_activia.valor_mensal:,.2f}" if lead_activia else "não informado"
-        resposta = f"O contrato da Activia Logística está associado ao MalhaX, com valor mensal de {valor}. O sistema está configurado em estágio de ROLLOUT."
-    elif any(k in pergunta_lower for k in ["shirlei", "clinica", "clínica"]):
-        resposta = "A Clínica da Dra. Shirlei Elisabete está com contrato de R$ 1.200,00 liquidado no ciclo, e o sistema 01.Clínicas está ativo no PythonAnywhere."
-    elif any(k in pergunta_lower for k in ["maranata", "açaí", "acai", "açaiteria"]):
-        resposta = "A Açaiteria Maranata está cadastrada com mensalidade de R$ 1.800,00 no plano de Totem de Autoatendimento e comanda rápida."
-    elif any(k in pergunta_lower for k in ["adega", "adegaos"]):
-        resposta = "A AdegaOS Distribuidora possui contrato de R$ 2.500,00 mensais para a solução WMS e gestão de empórios."
-    elif any(k in pergunta_lower for k in ["erro", "bug", "falha", "anomalia"]):
-        erros_ativos = telemetria_service.listar_erros(db, status="NOVO")
-        resposta = f"Atualmente temos {len(erros_ativos)} erros ou bugs ativos. Todos os sistemas monitorados estão operando com estabilidade."
-    else:
-        total = resumo_fin.faturamento_liquidado + resumo_fin.faturamento_a_receber
-        resposta = f"A Central MalhaCore possui {len(leads)} clientes ativos com faturamento total de R$ {total:,.2f} e {len(apps)} sistemas mapeados na rede."
 
-    return {
-        "pergunta": dados.pergunta,
-        "resposta": resposta,
-        "timestamp": datetime.now().strftime("%H:%M:%S")
-    }

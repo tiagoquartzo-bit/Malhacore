@@ -428,12 +428,13 @@ async function excluirLeadAtual() {
 // CONTROLE DE VISÕES PRINCIPAIS (COMANDO CENTRAL MULTI-APP)
 // =========================================================================
 function mudarVisaoPrincipal(visaoId) {
-    const visoes = ['visaoFinanceiro', 'visaoApps', 'visaoErros', 'visaoAcessos'];
+    const visoes = ['visaoFinanceiro', 'visaoApps', 'visaoErros', 'visaoAcessos', 'visaoCopilot'];
     const btns = {
         'visaoFinanceiro': 'btnVisaoFinanceiro',
         'visaoApps': 'btnVisaoApps',
         'visaoErros': 'btnVisaoErros',
-        'visaoAcessos': 'btnVisaoAcessos'
+        'visaoAcessos': 'btnVisaoAcessos',
+        'visaoCopilot': 'btnVisaoCopilot'
     };
 
     visoes.forEach(id => {
@@ -1014,12 +1015,162 @@ async function perguntarIA(event) {
 // Fechar com tecla ESC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        const modalIA = document.getElementById('modalIABriefing');
-        if (modalIA && modalIA.classList.contains('open')) {
-            fecharModalIABriefing();
+        const modalCopilot = document.getElementById('modalCopilot');
+        if (modalCopilot && modalCopilot.classList.contains('open')) {
+            fecharModalCopilot();
         }
     }
 });
+
+// =========================================================================
+// COPILOT MALHACORE - CONSULTAS À BASE DE DADOS (100% GRATUITO, SEM ÁUDIO)
+// =========================================================================
+
+function renderizarMarkdown(texto) {
+    if (!texto) return '';
+    let html = texto;
+
+    // Escapar caracteres básicos
+    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Headers: ### Title
+    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--accent-cyan); margin: 8px 0 6px 0; font-size: 13.5px;">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h3 style="color: var(--accent-cyan); margin: 10px 0 6px 0; font-size: 14px;">$1</h3>');
+
+    // Negrito: **text**
+    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #FFFFFF;">$1</strong>');
+
+    // Itálico: *text*
+    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+
+    // Código inline: `code`
+    html = html.replace(/`([^`]+)`/gim, '<code class="mono" style="background: rgba(0,210,211,0.1); color: var(--accent-cyan); padding: 2px 6px; border-radius: 3px; font-size: 11px;">$1</code>');
+
+    // Listas: - item
+    html = html.replace(/^\- (.*$)/gim, '<li style="margin-left: 18px; margin-bottom: 4px;">$1</li>');
+
+    // Quebras de linha
+    html = html.replace(/\n\n/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+}
+
+async function processarConsultaCopilot(pergunta, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Bolha do usuário
+    const bubbleUser = document.createElement('div');
+    bubbleUser.className = 'copilot-bubble user';
+    bubbleUser.innerHTML = `<div style="font-size: 11px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 700;">VOCÊ</div><div>${pergunta}</div>`;
+    container.appendChild(bubbleUser);
+
+    // Bolha temporária do assistente
+    const bubbleAssist = document.createElement('div');
+    bubbleAssist.className = 'copilot-bubble assistant';
+    bubbleAssist.innerHTML = `<div style="font-size: 11px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 700;">COPILOT MALHACORE</div><div style="color: var(--text-tertiary); font-style: italic;">Consultando base de dados em tempo real...</div>`;
+    container.appendChild(bubbleAssist);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+        const resp = await fetch('/api/ia/copilot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pergunta: pergunta })
+        });
+
+        if (!resp.ok) throw new Error('Falha ao processar consulta');
+        const data = await resp.json();
+
+        bubbleAssist.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; color: var(--accent-cyan); font-weight: 700;">COPILOT MALHACORE [${data.timestamp || ''}]</span>
+                <span class="mono" style="font-size: 10px; color: var(--text-tertiary);">${data.motor || 'NATIVO'}</span>
+            </div>
+            <div>${renderizarMarkdown(data.resposta)}</div>
+        `;
+    } catch (err) {
+        console.error('Erro no Copilot:', err);
+        bubbleAssist.innerHTML = `
+            <div style="font-size: 11px; color: var(--status-inadimplente-text); font-weight: 700;">ERRO NA CONSULTA</div>
+            <div style="color: var(--text-secondary);">Não foi possível consultar a base de dados no momento.</div>
+        `;
+    }
+
+    container.scrollTop = container.scrollHeight;
+}
+
+function abrirModalCopilot() {
+    const modal = document.getElementById('modalCopilot');
+    if (modal) modal.classList.add('open');
+    const input = document.getElementById('inputCopilotModal');
+    if (input) setTimeout(() => input.focus(), 150);
+}
+
+function fecharModalCopilot() {
+    const modal = document.getElementById('modalCopilot');
+    if (modal) modal.classList.remove('open');
+}
+
+function submeterConsultaCopilot(e) {
+    e.preventDefault();
+    const input = document.getElementById('inputCopilotModal');
+    if (!input || !input.value.trim()) return;
+    const pergunta = input.value.trim();
+    input.value = '';
+    processarConsultaCopilot(pergunta, 'copilotModalMensagens');
+}
+
+function enviarPerguntaCopilot(pergunta) {
+    const input = document.getElementById('inputCopilotModal');
+    if (input) input.value = '';
+    processarConsultaCopilot(pergunta, 'copilotModalMensagens');
+}
+
+function submeterConsultaCopilotView(e) {
+    e.preventDefault();
+    const input = document.getElementById('inputCopilotView');
+    if (!input || !input.value.trim()) return;
+    const pergunta = input.value.trim();
+    input.value = '';
+    processarConsultaCopilot(pergunta, 'copilotViewMensagens');
+}
+
+function enviarPerguntaCopilotView(pergunta) {
+    const input = document.getElementById('inputCopilotView');
+    if (input) input.value = '';
+    processarConsultaCopilot(pergunta, 'copilotViewMensagens');
+}
+
+function limparChatCopilot() {
+    const container = document.getElementById('copilotModalMensagens');
+    if (container) {
+        container.innerHTML = `
+            <div class="copilot-bubble assistant">
+                <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
+                    COPILOT MALHACORE — HISTÓRICO LIMPO
+                </div>
+                <div>Histórico reiniciado. Digite uma pergunta ou clique em um dos atalhos acima para consultar sua base de dados.</div>
+            </div>
+        `;
+    }
+}
+
+function limparChatCopilotView() {
+    const container = document.getElementById('copilotViewMensagens');
+    if (container) {
+        container.innerHTML = `
+            <div class="copilot-bubble assistant">
+                <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
+                    COPILOT MALHACORE — HISTÓRICO LIMPO
+                </div>
+                <div>Histórico reiniciado. Digite uma pergunta ou clique em um dos atalhos acima para consultar sua base de dados.</div>
+            </div>
+        `;
+    }
+}
+
 
 
 
