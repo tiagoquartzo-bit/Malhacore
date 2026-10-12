@@ -1023,33 +1023,88 @@ document.addEventListener('keydown', (e) => {
 });
 
 // =========================================================================
-// COPILOT MALHACORE - CONSULTAS À BASE DE DADOS (100% GRATUITO, SEM ÁUDIO)
+// COPILOT MALHACORE - CONSULTAS À BASE DE DADOS (CFO VIRTUAL & COMANDO)
 // =========================================================================
+
+function converterTabelaMarkdown(linhasTabela) {
+    if (linhasTabela.length < 2) return linhasTabela.join('<br>');
+    
+    let html = '<div style="overflow-x: auto; margin: 10px 0;"><table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+    
+    // Cabeçalho
+    const ths = linhasTabela[0].split('|').map(c => c.trim()).filter(c => c.length > 0);
+    html += '<thead><tr style="background: rgba(15, 23, 42, 0.8); border-bottom: 2px solid rgba(0, 210, 211, 0.4);">';
+    ths.forEach(th => {
+        html += `<th style="padding: 8px 10px; color: var(--accent-cyan); text-align: left; font-weight: 700;">${th}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // Linhas de dados (ignora linha de separadores | :--- |)
+    for (let i = 1; i < linhasTabela.length; i++) {
+        const linha = linhasTabela[i];
+        if (linha.includes('---') || linha.includes(':---')) continue;
+        
+        const tds = linha.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length);
+        if (tds.length === 0) continue;
+
+        const bg = i % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent';
+        html += `<tr style="background: ${bg}; border-bottom: 1px solid rgba(148, 163, 184, 0.15);">`;
+        tds.forEach(td => {
+            html += `<td style="padding: 7px 10px; color: #E2E8F0;">${td}</td>`;
+        });
+        html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+}
 
 function renderizarMarkdown(texto) {
     if (!texto) return '';
-    let html = texto;
 
-    // Escapar caracteres básicos
-    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // 1. Processar tabelas Markdown primeiro
+    const linhas = texto.split('\n');
+    let processadoLinhas = [];
+    let tabelaBuffer = [];
+    let dentroTabela = false;
+
+    for (let i = 0; i < linhas.length; i++) {
+        const l = linhas[i].trim();
+        if (l.startsWith('|') && l.endsWith('|')) {
+            dentroTabela = true;
+            tabelaBuffer.push(l);
+        } else {
+            if (dentroTabela) {
+                processadoLinhas.push(converterTabelaMarkdown(tabelaBuffer));
+                tabelaBuffer = [];
+                dentroTabela = false;
+            }
+            processadoLinhas.push(linhas[i]);
+        }
+    }
+    if (dentroTabela) {
+        processadoLinhas.push(converterTabelaMarkdown(tabelaBuffer));
+    }
+
+    let html = processadoLinhas.join('\n');
 
     // Headers: ### Title
-    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--accent-cyan); margin: 8px 0 6px 0; font-size: 13.5px;">$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h3 style="color: var(--accent-cyan); margin: 10px 0 6px 0; font-size: 14px;">$1</h3>');
+    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--accent-cyan); margin: 12px 0 8px 0; font-size: 14px; font-weight: 800;">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2 style="color: #FFFFFF; margin: 14px 0 8px 0; font-size: 15px; font-weight: 800;">$1</h2>');
 
     // Negrito: **text**
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #FFFFFF;">$1</strong>');
+    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #FFFFFF; font-weight: 700;">$1</strong>');
 
     // Itálico: *text*
-    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+    html = html.replace(/\*(.*?)\*/gim, '<em style="color: var(--text-secondary);">$1</em>');
 
     // Código inline: `code`
-    html = html.replace(/`([^`]+)`/gim, '<code class="mono" style="background: rgba(0,210,211,0.1); color: var(--accent-cyan); padding: 2px 6px; border-radius: 3px; font-size: 11px;">$1</code>');
+    html = html.replace(/`([^`]+)`/gim, '<code class="mono" style="background: rgba(0,210,211,0.12); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-size: 11.5px; border: 1px solid rgba(0,210,211,0.25);">$1</code>');
 
     // Listas: - item
-    html = html.replace(/^\- (.*$)/gim, '<li style="margin-left: 18px; margin-bottom: 4px;">$1</li>');
+    html = html.replace(/^\- (.*$)/gim, '<li style="margin-left: 18px; margin-bottom: 4px; color: #CBD5E1;">$1</li>');
 
-    // Quebras de linha
+    // Quebras de linha (preservando estrutura de tabelas)
     html = html.replace(/\n\n/g, '<br><br>');
     html = html.replace(/\n/g, '<br>');
 
@@ -1063,38 +1118,51 @@ async function processarConsultaCopilot(pergunta, containerId) {
     // Bolha do usuário
     const bubbleUser = document.createElement('div');
     bubbleUser.className = 'copilot-bubble user';
-    bubbleUser.innerHTML = `<div style="font-size: 11px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 700;">VOCÊ</div><div>${pergunta}</div>`;
+    bubbleUser.innerHTML = `
+        <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 800; letter-spacing: 0.05em;">VOCÊ // OPERADOR</div>
+        <div style="font-size: 13.5px; color: #FFFFFF;">${pergunta}</div>
+    `;
     container.appendChild(bubbleUser);
 
     // Bolha temporária do assistente
     const bubbleAssist = document.createElement('div');
     bubbleAssist.className = 'copilot-bubble assistant';
-    bubbleAssist.innerHTML = `<div style="font-size: 11px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 700;">COPILOT MALHACORE</div><div style="color: var(--text-tertiary); font-style: italic;">Consultando base de dados em tempo real...</div>`;
+    bubbleAssist.innerHTML = `
+        <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 800; letter-spacing: 0.05em;">MALHACORE COPILOT</div>
+        <div style="color: var(--text-tertiary); font-style: italic; font-size: 12.5px;">⚡ Analisando contratos e calculando indicadores no SQLite...</div>
+    `;
     container.appendChild(bubbleAssist);
     container.scrollTop = container.scrollHeight;
 
+    const geminiKey = localStorage.getItem('malhacore_gemini_key') || '';
+
     try {
+        const payload = { pergunta: pergunta };
+        if (geminiKey) payload.api_key = geminiKey;
+
         const resp = await fetch('/api/ia/copilot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pergunta: pergunta })
+            body: JSON.stringify(payload)
         });
 
         if (!resp.ok) throw new Error('Falha ao processar consulta');
         const data = await resp.json();
 
         bubbleAssist.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 11px; color: var(--accent-cyan); font-weight: 700;">COPILOT MALHACORE [${data.timestamp || ''}]</span>
-                <span class="mono" style="font-size: 10px; color: var(--text-tertiary);">${data.motor || 'NATIVO'}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); padding-bottom: 6px;">
+                <span style="font-size: 11px; color: var(--accent-cyan); font-weight: 800; letter-spacing: 0.04em;">
+                    MALHACORE COPILOT [${data.timestamp || ''}]
+                </span>
+                <span class="btn-copilot-tag" style="font-size: 9px;">${data.motor_badge || data.motor || 'SQLITE AI'}</span>
             </div>
-            <div>${renderizarMarkdown(data.resposta)}</div>
+            <div style="font-size: 13.5px; line-height: 1.65;">${renderizarMarkdown(data.resposta)}</div>
         `;
     } catch (err) {
         console.error('Erro no Copilot:', err);
         bubbleAssist.innerHTML = `
             <div style="font-size: 11px; color: var(--status-inadimplente-text); font-weight: 700;">ERRO NA CONSULTA</div>
-            <div style="color: var(--text-secondary);">Não foi possível consultar a base de dados no momento.</div>
+            <div style="color: var(--text-secondary);">Não foi possível consultar a base de dados no momento. Tente novamente em instantes.</div>
         `;
     }
 
@@ -1170,6 +1238,66 @@ function limparChatCopilotView() {
         `;
     }
 }
+
+// Configuração de Chave Gemini
+function abrirConfiguracaoChaveIA() {
+    const modal = document.getElementById('modalChaveIA');
+    if (modal) {
+        modal.classList.add('open');
+        const input = document.getElementById('inputChaveGemini');
+        if (input) {
+            input.value = localStorage.getItem('malhacore_gemini_key') || '';
+            input.focus();
+        }
+    }
+}
+
+function fecharConfiguracaoChaveIA() {
+    const modal = document.getElementById('modalChaveIA');
+    if (modal) modal.classList.remove('open');
+}
+
+async function salvarChaveGemini() {
+    const input = document.getElementById('inputChaveGemini');
+    if (!input) return;
+    const chave = input.value.trim();
+
+    if (chave) {
+        localStorage.setItem('malhacore_gemini_key', chave);
+        try {
+            await fetch('/api/ia/configurar-chave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: chave })
+            });
+        } catch (e) {
+            console.warn('Erro ao sincronizar chave com backend:', e);
+        }
+        showToast('CHAVE GEMINI SALVA COM SUCESSO!');
+    } else {
+        localStorage.removeItem('malhacore_gemini_key');
+        showToast('CHAVE REMOVIDA. USANDO MOTOR NATIVO SQLITE AI.');
+    }
+    fecharConfiguracaoChaveIA();
+}
+
+async function removerChaveGemini() {
+    localStorage.removeItem('malhacore_gemini_key');
+    const input = document.getElementById('inputChaveGemini');
+    if (input) input.value = '';
+    try {
+        await fetch('/api/ia/configurar-chave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: '' })
+        });
+    } catch (e) {
+        console.warn(e);
+    }
+    showToast('CHAVE REMOVIDA. USANDO MOTOR NATIVO SQLITE AI.');
+    fecharConfiguracaoChaveIA();
+}
+
 
 
 

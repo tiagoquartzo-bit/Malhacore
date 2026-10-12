@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }}</title>
+    <!-- GOOGLE FONTS OFICIAIS: PLUS JAKARTA SANS & JETBRAINS MONO -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/malhacore.css">
 </head>
 <body>
@@ -13,10 +17,12 @@
             <span class="brand-tag">LEDGER & COMMAND</span>
         </div>
 
-        <!-- BOTÃO COPILOT IA DESTACADO NO TOPO -->
+        <!-- BOTÃO COPILOT IA DESTACADO NO TOPO (MODERNO E ELEGANTE) -->
         <div class="topbar-center">
-            <button type="button" class="btn-copilot" onclick="abrirModalCopilot()" title="Consultar Copilot MalhaCore (100% Gratuito à Base de Dados)">
-                <span class="copilot-dot"></span>🤖 COPILOT IA [CONSULTAR]
+            <button type="button" class="btn-copilot" onclick="abrirModalCopilot()" title="Consultar Copilot MalhaCore Intelligence">
+                <span class="copilot-dot"></span>
+                <span class="btn-copilot-label">⚡ COPILOT IA EXEC</span>
+                <span class="btn-copilot-tag">ONLINE</span>
             </button>
         </div>
 
@@ -47,42 +53,53 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- MODAL DE CONSULTA COPILOT IA (SEM ÁUDIO, 100% GRATUITO) -->
+    <!-- MODAL DE CONSULTA COPILOT IA -->
     <div id="modalCopilot" class="modal-overlay">
-        <div class="ia-modal-card" style="max-width: 820px; border-color: var(--accent-cyan);">
+        <div class="ia-modal-card" style="max-width: 860px; border-color: var(--accent-cyan);">
             <div class="ia-modal-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span class="copilot-dot"></span>
-                    <h3 style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: var(--accent-cyan);">
-                        MALHACORE COPILOT // CONSULTA INTELIGENTE DA BASE DE DADOS
-                    </h3>
+                    <div>
+                        <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #FFFFFF;">
+                            MALHACORE COPILOT // CFO VIRTUAL & COMANDO
+                        </h3>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-tertiary);">
+                            Base SQLite Conectada em Tempo Real • Zero Custos • Respostas em Texto Formatado
+                        </p>
+                    </div>
                 </div>
-                <button type="button" class="btn btn-sm" onclick="fecharModalCopilot()">FECHAR [ESC]</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-sm btn-outline-cyan" onclick="abrirConfiguracaoChaveIA()" title="Configurar chave do Google Gemini (Opcional)">
+                        🔑 CHAVE GEMINI
+                    </button>
+                    <button type="button" class="btn btn-sm" onclick="fecharModalCopilot()">FECHAR [ESC]</button>
+                </div>
             </div>
             
             <!-- Barra de Atalhos de Consultas Rápidas -->
             <div class="copilot-pills-bar">
                 <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Resumo financeiro da carteira')">💰 Resumo Financeiro</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Quais clientes estão pendentes a receber?')">⏳ Clientes Pendentes</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Quem são todos os meus clientes e quanto pagam?')">📋 Lista de Clientes</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Tem algum contrato inadimplente em atraso?')">⚠️ Inadimplentes</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Como estão os sistemas da Central de Apps?')">🌐 Central de Apps</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Qual é o ticket médio da carteira?')">📊 Ticket Médio</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Análise de Pareto e concentração da Activia')">🎯 Curva ABC / Pareto</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Cronograma tático de cobrança e vencimentos')">⏳ Cronograma Vencimentos</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Recomendações estratégicas do CFO')">💡 Recomendações CFO</button>
                 <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Como está o contrato da Activia Logística?')">🏢 Activia (MalhaX)</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Como está o contrato da Dra. Shirlei?')">🩺 Dra. Shirlei</button>
-                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Tem algum erro ou anomalia ativa?')">🛡️ Erros e Bugs</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Como estão as Clínicas Médicas (Dra. Shirlei e Raquel)?')">🩺 Clínicas Médicas</button>
+                <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilot('Como está a Central de Apps e estabilidade?')">🌐 Central de Apps</button>
             </div>
 
             <!-- Área de Mensagens / Respostas do Copilot -->
             <div class="copilot-messages" id="copilotModalMensagens">
                 <div class="copilot-bubble assistant">
                     <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
-                        COPILOT MALHACORE — ASSISTENTE LOCAL CONECTADO
+                        COPILOT MALHACORE — STATUS: CONECTADO À BASE DE DADOS
                     </div>
                     <div>
-                        Olá Tiago! Sou seu assistente Copilot integrado diretamente ao banco de dados SQLite do MalhaCore.
+                        Olá Tiago! Sou seu Copilot de inteligência artificial amarrado diretamente ao banco de dados SQLite local.
                         <br><br>
-                        Você pode fazer qualquer pergunta por escrito sobre faturamento, clientes, prazos, contratos específicos ou aplicativos da Central. 
-                        <strong>Sem áudio ou sons: consultas rápidas e diretas na tela.</strong>
+                        Você pode me perguntar qualquer coisa sobre a operação (ex: <em>"Quanto temos a receber?"</em>, <em>"Qual é o ticket médio?"</em>, <em>"Análise de concentração da Activia"</em> ou <em>"Como estão os apps?"</em>).
+                        <br><br>
+                        <strong>Sem áudio ou voz: respostas em texto executivo estruturado, rápidas e precisas.</strong>
                     </div>
                 </div>
             </div>
@@ -92,12 +109,45 @@
                 <input 
                     type="text" 
                     id="inputCopilotModal" 
-                    placeholder="Digite sua pergunta (Ex: Quanto temos a receber? Quais clientes estão pendentes?)..." 
+                    placeholder="Digite sua pergunta (Ex: Qual o ticket médio? Quem vence primeiro? Análise de risco)..." 
                     autocomplete="off"
                 >
-                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">PERGUNTAR</button>
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">PERGUNTAR ➔</button>
                 <button type="button" class="btn btn-sm" onclick="limparChatCopilot()" title="Limpar histórico da conversa">LIMPAR</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURAÇÃO DE CHAVE GEMINI (OPCIONAL) -->
+    <div id="modalChaveIA" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>CONFIGURAR CHAVE GOOGLE GEMINI (OPCIONAL)</h3>
+                <button type="button" class="btn btn-sm" onclick="fecharConfiguracaoChaveIA()">FECHAR</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">
+                    O <strong>Copilot MalhaCore</strong> já funciona 100% gratuito e offline com o motor nativo analítico. 
+                    Se quiser ativar o modelo generativo <strong>Gemini 1.5 Flash (gratuito)</strong>, cole sua chave do Google AI Studio abaixo:
+                </p>
+                <div class="form-group">
+                    <label class="form-label">CHAVE DE API (GOOGLE GEMINI):</label>
+                    <input 
+                        type="password" 
+                        id="inputChaveGemini" 
+                        class="form-control" 
+                        placeholder="AIzaSy..." 
+                        autocomplete="off"
+                    >
+                </div>
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">
+                    Obtenha uma chave gratuita em: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--accent-cyan);">aistudio.google.com</a> (sem cartão de crédito).
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: space-between;">
+                <button type="button" class="btn btn-sm" onclick="removerChaveGemini()">REMOVER CHAVE</button>
+                <button type="button" class="btn btn-primary" onclick="salvarChaveGemini()">SALVAR CHAVE</button>
+            </div>
         </div>
     </div>
 

@@ -29,12 +29,12 @@
     </button>
 </nav>
 
-<!-- BANNER DE SINAIS PREDITIVOS DE ANOMALIAS -->
-{% if telemetria and telemetria.alertas_preditivos %}
+<!-- BANNER DE SINAIS PREDITIVOS DE ANOMALIAS (EXIBIDO APENAS SE HOUVER ANOMALIAS REAIS) -->
+{% if telemetria and telemetria.total_erros_ativos > 0 %}
 <section class="predictive-banner">
     <div class="predictive-banner-title">
-        <span>[ TELEMETRIA PREDITIVA DE ANOMALIAS ]</span>
-        <span class="mono" style="font-size: 10px; color: var(--text-secondary);">OBSERVABILIDADE CENTRAL ATIVA</span>
+        <span>⚠️ [ TELEMETRIA PREDITIVA: INCIDENTES ATIVOS ]</span>
+        <span class="mono" style="font-size: 10px; color: var(--status-inadimplente-text);">ATENÇÃO OPERACIONAL</span>
     </div>
     {% for alerta in telemetria.alertas_preditivos %}
     <div class="predictive-banner-item">{{ alerta }}</div>
@@ -641,46 +641,72 @@
     </section>
 </div>
 
-<!-- VISÃO 5: COPILOT IA (CONSULTAS INTELIGENTES EM TEMPO REAL) -->
+<!-- VISÃO 5: COPILOT IA (CENTRO DE INTELIGÊNCIA EXECUTIVA & CFO VIRTUAL) -->
 <div id="visaoCopilot" class="main-view" style="display: none;">
     <section class="ledger-panel">
-        <div class="ledger-header">
+        <div class="ledger-header" style="align-items: flex-start;">
             <div class="ledger-title-group">
-                <h2>🤖 COPILOT IA MALHACORE // CONSULTA À BASE DE DADOS</h2>
-                <p>Assistente amarrado diretamente ao banco de dados SQLite para responder dúvidas sobre contratos, faturamento e sistemas (100% gratuito, sem áudio).</p>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                    <span class="copilot-dot"></span>
+                    <h2 style="margin: 0; font-size: 16px; font-weight: 800; color: #FFFFFF;">
+                        COPILOT IA // INTELIGÊNCIA EXECUTIVA & CFO VIRTUAL
+                    </h2>
+                    <span class="btn-copilot-tag" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        SQLITE ONLINE
+                    </span>
+                </div>
+                <p style="margin: 0; font-size: 12px; color: var(--text-tertiary);">
+                    Análise em tempo real de faturamento, fluxo de caixa, concentração de carteira, cronograma de vencimentos e telemetria.
+                </p>
             </div>
-            <div class="ledger-actions">
-                <button class="btn btn-outline-cyan" onclick="limparChatCopilotView()">LIMPAR CONVERSA</button>
+            <div class="ledger-actions" style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-outline-cyan" onclick="abrirConfiguracaoChaveIA()" title="Configurar chave do Google Gemini (Opcional)">
+                    🔑 CHAVE GEMINI
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-cyan" onclick="limparChatCopilotView()" title="Limpar histórico da conversa">
+                    LIMPAR CONVERSA
+                </button>
             </div>
         </div>
 
-        <div style="padding: 20px;">
+        <div style="padding: 24px;">
             <div class="copilot-card">
-                <!-- Atalhos Rápidos -->
+                <!-- Barra de Atalhos Rápidos com Categorias -->
                 <div class="copilot-pills-bar">
-                    <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan); display: flex; align-items: center; margin-right: 6px;">CONSULTAS RÁPIDAS:</span>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--accent-cyan); letter-spacing: 0.05em; display: flex; align-items: center; margin-right: 4px;">
+                        CONSULTAS EXECUTIVAS:
+                    </span>
                     <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Resumo financeiro da carteira')">💰 Resumo Financeiro</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Quais clientes estão pendentes a receber?')">⏳ Clientes Pendentes</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Quem são todos os meus clientes e quanto pagam?')">📋 Lista de Clientes</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Tem algum contrato inadimplente em atraso?')">⚠️ Inadimplentes</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como estão os sistemas da Central de Apps?')">🌐 Central de Apps</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Qual é o ticket médio da carteira?')">📊 Ticket Médio</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Análise de Pareto e concentração da Activia')">🎯 Curva ABC / Pareto</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Cronograma tático de cobrança e vencimentos')">⏳ Cronograma Vencimentos</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Recomendações estratégicas do CFO')">💡 Recomendações CFO</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Qual a projeção financeira anual (ARR)?')">📈 Projeção Anual (ARR)</button>
                     <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como está o contrato da Activia Logística?')">🏢 Activia (MalhaX)</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como está o contrato da Dra. Shirlei?')">🩺 Dra. Shirlei</button>
-                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Tem algum erro ou anomalia ativa?')">🛡️ Erros e Bugs</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como estão as Clínicas Médicas (Dra. Shirlei e Raquel)?')">🩺 Clínicas Médicas</button>
+                    <button type="button" class="copilot-pill" onclick="enviarPerguntaCopilotView('Como está a Central de Apps e estabilidade?')">🌐 Central de Apps</button>
                 </div>
 
                 <!-- Mensagens do Chat -->
                 <div class="copilot-messages" id="copilotViewMensagens">
                     <div class="copilot-bubble assistant">
-                        <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
-                            COPILOT MALHACORE — STATUS: CONECTADO À BASE DE DADOS
+                        <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+                            <span class="copilot-dot" style="width: 6px; height: 6px;"></span>
+                            MALHACORE COPILOT — STATUS: CONECTADO À BASE DE DADOS
                         </div>
                         <div>
-                            Olá Tiago! Sou seu Copilot de inteligência artificial amarrado diretamente ao banco de dados SQLite local.
+                            Olá Tiago! Sou seu <strong>Copilot de Inteligência Financeira e Operacional</strong>, integrado em tempo real ao banco de dados SQLite da Central.
                             <br><br>
-                            Você pode me perguntar qualquer coisa sobre a operação (ex: <em>"Quanto temos a receber?"</em>, <em>"Quais clientes estão pendentes?"</em>, <em>"Como está o contrato da Activia?"</em> ou <em>"Como estão os apps?"</em>).
-                            <br><br>
-                            <strong>Sem áudio ou fala: respostas em texto formatadas, rápidas e precisas.</strong>
+                            Você pode me perguntar livremente sobre faturamento, projeções, contratos específicos ou saúde técnica. 
+                            Experimente perguntas como:
+                            <ul style="margin: 8px 0; padding-left: 18px; color: var(--text-secondary);">
+                                <li><em>"Qual é o ticket médio da carteira?"</em></li>
+                                <li><em>"Análise de concentração e risco da Activia"</em></li>
+                                <li><em>"Quem vence primeiro nesta semana?"</em></li>
+                                <li><em>"Qual a projeção de faturamento anual (ARR)?"</em></li>
+                                <li><em>"Recomendações estratégicas do CFO para hoje"</em></li>
+                            </ul>
+                            <strong>Sem áudio ou voz: respostas em texto executivo estruturado com tabelas e métricas.</strong>
                         </div>
                     </div>
                 </div>
@@ -690,10 +716,12 @@
                     <input 
                         type="text" 
                         id="inputCopilotView" 
-                        placeholder="Digite sua pergunta (Ex: Quem deve mais? Quanto foi liquidado? Detalhes da Dra. Shirlei)..." 
+                        placeholder="Digite sua pergunta ou escolha um atalho acima (Ex: Qual o ticket médio? Análise de risco)..." 
                         autocomplete="off"
                     >
-                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;">PERGUNTAR AO COPILOT</button>
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 10px 22px;">
+                        PERGUNTAR ➔
+                    </button>
                 </form>
             </div>
         </div>

@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database.connection import get_db
@@ -12,6 +13,10 @@ router = APIRouter(prefix="/api/ia", tags=["Copilot & Inteligência IA"])
 class PerguntaIARequest(BaseModel):
     pergunta: str
     api_key: Optional[str] = None
+
+
+class ChaveConfigRequest(BaseModel):
+    api_key: str
 
 
 def formatar_moeda_fala(valor: float) -> str:
@@ -130,5 +135,18 @@ def consultar_ia(dados: PerguntaIARequest, db: Session = Depends(get_db)) -> Dic
     )
     resultado["timestamp"] = datetime.now().strftime("%H:%M:%S")
     return resultado
+
+
+@router.post("/configurar-chave")
+def salvar_chave_gemini(dados: ChaveConfigRequest) -> Dict[str, Any]:
+    """Armazena chave Gemini na sessão do servidor."""
+    chave = dados.api_key.strip()
+    if chave:
+        os.environ["GEMINI_API_KEY"] = chave
+        return {"status": "SUCESSO", "mensagem": "Chave Gemini configurada com sucesso no MalhaCore."}
+    else:
+        os.environ.pop("GEMINI_API_KEY", None)
+        return {"status": "SUCESSO", "mensagem": "Chave removida. Retornando ao motor nativo SQLite AI."}
+
 
 

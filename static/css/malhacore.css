@@ -778,7 +778,7 @@ body {
 }
 
 /* ==========================================================================
-   COPILOT IA MALHACORE (CONSULTA GRATUITA À BASE DE DADOS - SEM ÁUDIO)
+   COPILOT IA EXEC MALHACORE (INTELIGÊNCIA EXECUTIVA & CFO VIRTUAL)
    ========================================================================== */
 
 .topbar-center {
@@ -793,25 +793,40 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, rgba(0, 210, 211, 0.2), rgba(37, 99, 235, 0.25));
-  border: 1px solid var(--accent-cyan);
+  background: linear-gradient(135deg, rgba(0, 210, 211, 0.15), rgba(37, 99, 235, 0.2));
+  border: 1px solid rgba(0, 210, 211, 0.5);
   color: #FFFFFF;
   padding: 6px 14px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 12px rgba(0, 210, 211, 0.25);
+  border-radius: 20px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 14px rgba(0, 210, 211, 0.2);
 }
 
 .btn-copilot:hover {
-  background: linear-gradient(135deg, rgba(0, 210, 211, 0.35), rgba(37, 99, 235, 0.4));
-  box-shadow: 0 0 20px rgba(0, 210, 211, 0.45);
+  background: linear-gradient(135deg, rgba(0, 210, 211, 0.3), rgba(37, 99, 235, 0.35));
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 22px rgba(0, 210, 211, 0.45);
   transform: translateY(-1px);
+}
+
+.btn-copilot-label {
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.btn-copilot-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 210, 211, 0.2);
+  color: var(--accent-cyan);
+  letter-spacing: 0.05em;
 }
 
 .copilot-dot {
@@ -820,152 +835,176 @@ body {
   background: var(--accent-cyan);
   border-radius: 50%;
   box-shadow: 0 0 8px var(--accent-cyan);
+  animation: pulseCyan 2s infinite ease-in-out;
 }
 
-/* Painel e Interface do Copilot */
+@keyframes pulseCyan {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Painel e Interface Moderna do Copilot */
 .copilot-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  background: #081120;
+  border: 1px solid rgba(0, 210, 211, 0.3);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
 }
 
 .copilot-header {
-  padding: 16px 20px;
-  background: var(--bg-core);
+  padding: 16px 22px;
+  background: #0B1629;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.copilot-pills-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 20px;
+  background: #060D1A;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.copilot-pill {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #CBD5E1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copilot-pill:hover {
+  background: rgba(0, 210, 211, 0.15);
+  color: #FFFFFF;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 210, 211, 0.25);
+  transform: translateY(-1px);
+}
+
 .copilot-messages {
-  padding: 20px;
-  min-height: 380px;
-  max-height: 540px;
+  padding: 24px;
+  min-height: 420px;
+  max-height: 580px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: rgba(3, 7, 14, 0.6);
+  gap: 18px;
+  background: #070E1B;
 }
 
 .copilot-bubble {
-  max-width: 88%;
-  padding: 14px 18px;
-  border-radius: 6px;
+  max-width: 90%;
+  padding: 16px 20px;
+  border-radius: 8px;
   font-size: 13.5px;
-  line-height: 1.6;
+  line-height: 1.65;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .copilot-bubble.user {
   align-self: flex-end;
-  background: var(--bg-elevated);
-  border: 1px solid var(--accent-blue);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(30, 58, 138, 0.4));
+  border: 1px solid rgba(59, 130, 246, 0.5);
   color: #FFFFFF;
 }
 
 .copilot-bubble.assistant {
   align-self: flex-start;
-  background: #090F1C;
-  border: 1px solid rgba(0, 210, 211, 0.4);
+  background: #0A1426;
+  border: 1px solid rgba(0, 210, 211, 0.25);
   border-left: 4px solid var(--accent-cyan);
-  color: #F8FAFC;
+  color: #F1F5F9;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .copilot-bubble h3 {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 800;
   color: var(--accent-cyan);
   margin-top: 0;
-  margin-bottom: 8px;
-  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
 }
 
 .copilot-bubble table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 12px 0;
   font-size: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .copilot-bubble th {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 6px 10px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-tertiary);
+  background: rgba(30, 41, 59, 0.8);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94A3B8;
+  font-weight: 700;
   text-align: left;
 }
 
 .copilot-bubble td {
-  padding: 6px 10px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  color: #E2E8F0;
+}
+
+.copilot-bubble tr:last-child td {
+  border-bottom: none;
 }
 
 .copilot-bubble ul {
-  margin: 6px 0;
-  padding-left: 18px;
+  margin: 8px 0;
+  padding-left: 20px;
 }
 
 .copilot-bubble li {
-  margin-bottom: 4px;
-}
-
-.copilot-pills-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--bg-core);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.copilot-pill {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 5px 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.15s;
-}
-
-.copilot-pill:hover {
-  background: var(--bg-elevated);
-  color: var(--accent-cyan);
-  border-color: var(--accent-cyan);
+  margin-bottom: 5px;
 }
 
 .copilot-input-bar {
-  padding: 14px 20px;
-  background: var(--bg-surface);
+  padding: 16px 20px;
+  background: #091222;
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  align-items: center;
 }
 
 .copilot-input-bar input {
   flex: 1;
-  background: var(--bg-core);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-  padding: 10px 14px;
-  font-size: 13px;
+  background: #060C17;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #FFFFFF;
+  padding: 12px 18px;
+  font-size: 13.5px;
   font-family: inherit;
-  border-radius: 4px;
+  border-radius: 8px;
   outline: none;
+  transition: all 0.2s;
 }
 
 .copilot-input-bar input:focus {
   border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 210, 211, 0.2);
 }
+
 
 /* ==========================================================================
    BRIEFING EXECUTIVO IA (MALHACORE INTELLIGENCE)
