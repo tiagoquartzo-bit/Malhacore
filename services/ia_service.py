@@ -95,8 +95,33 @@ def _processar_pergunta_nativa(
 ) -> str:
     """Processa intenções e formata resposta executiva em Markdown profissional."""
 
-    # 1. RESUMO GERAL / STATUS / COMO ESTÁ TUDO
-    if any(k in pergunta_lower for k in ["resumo", "status", "visao geral", "visão geral", "como esta", "como está", "painel", "saude", "saúde", "tudo"]):
+    # 1. BUSCA ESPECÍFICA DE CLIENTE PELO NOME OU CNPJ (Prioridade Alta)
+    for lead in leads:
+        nome_completo = (lead.razao_social or "").lower()
+        fantasia = (lead.nome_fantasia or "").lower()
+        doc = (lead.documento or "").lower()
+        codigo = (lead.codigo or "").lower()
+
+        palavras_empresa = [p for p in nome_completo.split() if len(p) > 3] + [p for p in fantasia.split() if len(p) > 3]
+
+        if any(p in pergunta_lower for p in palavras_empresa) or doc in pergunta_lower or codigo in pergunta_lower:
+            linhas = [
+                f"### 🏢 Ficha do Contrato: {lead.razao_social}",
+                f"- **Código:** `{lead.codigo}`",
+                f"- **Nome Fantasia:** {lead.nome_fantasia or 'N/A'}",
+                f"- **CNPJ/CPF:** `{lead.documento}`",
+                f"- **Mensalidade:** **{formatar_moeda_brl(lead.valor_mensal)}**",
+                f"- **Status Financeiro:** **{lead.status_pagamento}**",
+                f"- **Método de Pagamento:** {lead.metodo_pagamento}",
+                f"- **Data de Vencimento:** {lead.vencimento or 'A definir'}",
+                f"- **Contato:** {lead.contato_nome} ({lead.telefone} | {lead.email})",
+                f"- **Origem / Plano:** {lead.origem} | {lead.plano}",
+                f"- **Observações:** {lead.observacoes or 'Sem observações'}"
+            ]
+            return "\n".join(linhas)
+
+    # 2. RESUMO GERAL / STATUS / COMO ESTÁ TUDO
+    if any(k in pergunta_lower for k in ["resumo", "status geral", "visao geral", "visão geral", "como esta tudo", "como está tudo", "painel", "saude", "saúde"]):
         linhas = [
             "### 📊 Resumo Executivo MalhaCore",
             f"- **Base de Clientes:** {len(leads)} contratos ativos",
@@ -111,7 +136,7 @@ def _processar_pergunta_nativa(
             linhas.append("\n✅ *A carteira está com adimplência perfeita (100% em dia).*")
         return "\n".join(linhas)
 
-    # 2. PENDENTES / A RECEBER
+    # 3. PENDENTES / A RECEBER
     if any(k in pergunta_lower for k in ["receber", "previsto", "pendente", "pendentes", "falta", "aguardando", "aberto"]):
         pendentes = [l for l in leads if l.status_pagamento == "PENDENTE"]
         total_p = sum(l.valor_mensal for l in pendentes)
