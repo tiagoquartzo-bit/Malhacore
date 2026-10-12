@@ -157,6 +157,48 @@ def criar_novo_lead(db: Session, dados: LeadCreate) -> Lead:
         detalhes=f"Novo lead registrado no sistema via {lead.origem}"
     )
     db.add(auditoria)
+
+    # Conexão automática com a Central de Apps
+    if getattr(dados, "vincular_app", False):
+        try:
+            import re
+            from database.models import Aplicativo
+            agora = datetime.now(timezone.utc)
+            nome_ponto = lead.nome_fantasia or lead.razao_social
+            
+            if dados.app_vinculado_slug:
+                app_existente = db.query(Aplicativo).filter(Aplicativo.slug == dados.app_vinculado_slug).first()
+                if app_existente:
+                    app_existente.cliente_piloto = nome_ponto
+                    app_existente.ultimo_ping = agora
+                    if dados.app_estagio_deploy:
+                        app_existente.estagio_deploy = dados.app_estagio_deploy
+            else:
+                base_slug = re.sub(r'[^a-z0-9]+', '-', nome_ponto.lower()).strip('-')
+                slug_ponto = base_slug or f"app-{lead.id}"
+                
+                app_achado = db.query(Aplicativo).filter(Aplicativo.slug == slug_ponto).first()
+                if app_achado:
+                    app_achado.cliente_piloto = nome_ponto
+                    app_achado.ultimo_ping = agora
+                else:
+                    novo_app = Aplicativo(
+                        slug=slug_ponto,
+                        nome=f"{nome_ponto} — Ponto Integrado",
+                        categoria="Operações & Negócios",
+                        ambiente="piloto",
+                        api_key=f"mc_live_{slug_ponto}_key",
+                        status="OPERACIONAL",
+                        estagio_deploy=dados.app_estagio_deploy or "ROLLOUT",
+                        cliente_piloto=nome_ponto,
+                        versao="1.0.0",
+                        descricao=f"Ponto de rede integrado ao contrato {lead.codigo}. Plano: {lead.plano}.",
+                        ultimo_ping=agora
+                    )
+                    db.add(novo_app)
+        except Exception as err_app:
+            print(f"[Aviso] Falha ao vincular app automaticamente: {err_app}")
+
     db.commit()
     db.refresh(lead)
     return lead

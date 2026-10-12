@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarBuscaErros();
     configurarFiltrosAcessos();
     configurarBuscaAcessos();
+    verificarConexaoCentralApps(false);
 });
 
 function showToast(msg) {
@@ -108,6 +109,9 @@ function configurarFormularioNovoLead() {
             status_pagamento: formData.get('status_pagamento') || 'PENDENTE',
             metodo_pagamento: formData.get('metodo_pagamento') || 'PIX',
             vencimento: formData.get('vencimento') || null,
+            vincular_app: formData.get('vincular_app') === 'true' || formData.get('vincular_app') === 'on',
+            app_vinculado_slug: formData.get('app_vinculado_slug') || null,
+            app_estagio_deploy: formData.get('app_estagio_deploy') || 'ROLLOUT',
             observacoes: formData.get('observacoes') || null
         };
 
@@ -444,6 +448,10 @@ function mudarVisaoPrincipal(visaoId) {
 
     const activeBtn = document.getElementById(btns[visaoId]);
     if (activeBtn) activeBtn.classList.add('active');
+
+    if (visaoId === 'visaoApps') {
+        verificarConexaoCentralApps(false);
+    }
 }
 
 // =========================================================================
@@ -740,6 +748,278 @@ function aplicarFiltrosApps() {
         contador.textContent = `${visiveis} SISTEMAS CATALOGADOS`;
     }
 }
+
+// =========================================================================
+// CONEXÃO AUTOMÁTICA DA CENTRAL DE APPS
+// =========================================================================
+async function verificarConexaoCentralApps(notificar = false) {
+    try {
+        const resp = await fetch('/api/telemetria/resumo');
+        if (resp.ok) {
+            const data = await resp.json();
+            const statusEl = document.getElementById('statusConexaoApps');
+            if (statusEl) {
+                statusEl.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="live-indicator" style="background: var(--status-pago-text); box-shadow: 0 0 8px var(--status-pago-text);"></span>
+                        <span style="font-weight: 700; color: #FFFFFF;">CENTRAL DE APPS CONECTADA (${data.total_apps} SISTEMAS)</span>
+                        <span style="color: var(--text-secondary);">— DISPONIBILIDADE: ${data.taxa_disponibilidade}% | RESPOSTA NOMINAL</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-cyan" onclick="verificarConexaoCentralApps(true)" style="font-size: 10px; padding: 3px 8px;">REVERIFICAR CONEXÃO</button>
+                `;
+            }
+            if (notificar) {
+                showToast(`CENTRAL CONECTADA: ${data.total_apps} SISTEMAS SINCRONIZADOS (${data.taxa_disponibilidade}% ATIVO)`);
+            }
+        }
+    } catch (err) {
+        console.error('Falha ao verificar conexão com Central de Apps:', err);
+        const statusEl = document.getElementById('statusConexaoApps');
+        if (statusEl) {
+            statusEl.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="color: var(--status-inadimplente-text); font-weight: 700;">[FALHA DE REDE] CENTRAL DE APPS DESCONECTADA</span>
+                </div>
+                <button class="btn btn-sm" onclick="verificarConexaoCentralApps(true)" style="font-size: 10px; padding: 3px 8px;">TENTAR NOVAMENTE</button>
+            `;
+        }
+    }
+}
+
+// =========================================================================
+// BRIEFING EXECUTIVO COM INTELIGÊNCIA ARTIFICIAL & SÍNTESE DE VOZ (PT-BR)
+// =========================================================================
+let synth = ('speechSynthesis' in window) ? window.speechSynthesis : null;
+let currentUtterance = null;
+let briefingDataCache = null;
+let ptVoiceSelected = null;
+
+function carregarVozes() {
+    if (!synth) return;
+    const voices = synth.getVoices();
+    ptVoiceSelected = voices.find(v => v.lang === 'pt-BR' && (v.name.includes('Luciana') || v.name.includes('Maria') || v.name.includes('Google') || v.name.includes('Natural'))) ||
+                      voices.find(v => v.lang === 'pt-BR') ||
+                      voices.find(v => v.lang.startsWith('pt')) ||
+                      null;
+}
+
+if (synth) {
+    carregarVozes();
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = carregarVozes;
+    }
+}
+
+async function abrirModalIABriefing() {
+    const modal = document.getElementById('modalIABriefing');
+    if (!modal) return;
+    modal.classList.add('open');
+
+    const speechBox = document.getElementById('iaSpeechBox');
+    const kpiRow = document.getElementById('iaKpiRow');
+
+    if (speechBox) {
+        speechBox.innerHTML = '<div style="color: var(--text-tertiary); font-style: italic;">Carregando telemetria e sintetizando relatório executivo...</div>';
+    }
+
+    try {
+        const resp = await fetch('/api/ia/briefing');
+        if (!resp.ok) throw new Error('Falha na resposta da API de inteligência');
+        const data = await resp.json();
+        briefingDataCache = data;
+
+        if (speechBox) {
+            speechBox.innerHTML = `
+                <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px; letter-spacing: 0.05em;">
+                    DIAGNÓSTICO EXECUTIVO — ${data.timestamp} [${data.status}]
+                </div>
+                <div>${data.texto_fala}</div>
+            `;
+        }
+
+        if (kpiRow && data.kpis) {
+            kpiRow.innerHTML = `
+                <div class="ia-kpi-chip">
+                    <div class="label">Total Contratos</div>
+                    <div class="val mono">${data.kpis.total_contratos}</div>
+                </div>
+                <div class="ia-kpi-chip">
+                    <div class="label">Faturamento Carteira</div>
+                    <div class="val mono" style="color: var(--accent-cyan); font-size: 13px;">${formatarMoeda(data.kpis.faturamento_carteira)}</div>
+                </div>
+                <div class="ia-kpi-chip">
+                    <div class="label">Liquidado</div>
+                    <div class="val mono" style="color: var(--status-pago-text); font-size: 13px;">${formatarMoeda(data.kpis.faturamento_liquidado)}</div>
+                </div>
+                <div class="ia-kpi-chip">
+                    <div class="label">A Receber</div>
+                    <div class="val mono" style="color: var(--status-pendente-text); font-size: 13px;">${formatarMoeda(data.kpis.faturamento_a_receber)}</div>
+                </div>
+                <div class="ia-kpi-chip">
+                    <div class="label">Apps na Rede</div>
+                    <div class="val mono">${data.kpis.apps_publicados} / ${data.kpis.total_apps}</div>
+                </div>
+                <div class="ia-kpi-chip">
+                    <div class="label">Falhas / Erros</div>
+                    <div class="val mono" style="color: ${data.kpis.erros_ativos > 0 ? 'var(--status-inadimplente-text)' : 'var(--status-pago-text)'};">${data.kpis.erros_ativos}</div>
+                </div>
+            `;
+        }
+
+        // Iniciar fala sintetizada automaticamente
+        tocarAudioBriefing();
+    } catch (err) {
+        console.error('Erro ao abrir briefing IA:', err);
+        if (speechBox) {
+            speechBox.innerHTML = '<div style="color: var(--status-inadimplente-text);">Falha de comunicação com o motor de inteligência artificial MalhaCore.</div>';
+        }
+    }
+}
+
+function fecharModalIABriefing() {
+    pararAudioBriefing();
+    const modal = document.getElementById('modalIABriefing');
+    if (modal) modal.classList.remove('open');
+}
+
+function tocarAudioBriefing(textoCustom = null) {
+    if (!synth) {
+        alert('Seu navegador não possui suporte à síntese de voz (Web Speech API).');
+        return;
+    }
+
+    if (synth.paused && !textoCustom) {
+        synth.resume();
+        const visualizer = document.getElementById('iaAudioVisualizer');
+        if (visualizer) visualizer.classList.add('speaking');
+        atualizarBotoesAudio(true);
+        return;
+    }
+
+    synth.cancel();
+
+    const textoParaFalar = textoCustom || (briefingDataCache ? briefingDataCache.texto_fala : null);
+    if (!textoParaFalar) return;
+
+    if (!ptVoiceSelected) carregarVozes();
+
+    currentUtterance = new SpeechSynthesisUtterance(textoParaFalar);
+    currentUtterance.lang = 'pt-BR';
+    if (ptVoiceSelected) {
+        currentUtterance.voice = ptVoiceSelected;
+    }
+    currentUtterance.rate = 1.05;
+    currentUtterance.pitch = 1.0;
+
+    const visualizer = document.getElementById('iaAudioVisualizer');
+
+    currentUtterance.onstart = () => {
+        if (visualizer) visualizer.classList.add('speaking');
+        atualizarBotoesAudio(true);
+    };
+
+    currentUtterance.onend = () => {
+        if (visualizer) visualizer.classList.remove('speaking');
+        atualizarBotoesAudio(false);
+    };
+
+    currentUtterance.onerror = (e) => {
+        console.warn('Speech synthesis event:', e);
+        if (visualizer) visualizer.classList.remove('speaking');
+        atualizarBotoesAudio(false);
+    };
+
+    synth.speak(currentUtterance);
+}
+
+function pausarAudioBriefing() {
+    if (!synth) return;
+    if (synth.speaking) {
+        synth.pause();
+        const visualizer = document.getElementById('iaAudioVisualizer');
+        if (visualizer) visualizer.classList.remove('speaking');
+        const btnOuvir = document.getElementById('btnIaOuvir');
+        if (btnOuvir) btnOuvir.textContent = '▶ RETOMAR';
+    }
+}
+
+function reiniciarAudioBriefing() {
+    if (!synth) return;
+    synth.cancel();
+    tocarAudioBriefing();
+}
+
+function pararAudioBriefing() {
+    if (!synth) return;
+    synth.cancel();
+    const visualizer = document.getElementById('iaAudioVisualizer');
+    if (visualizer) visualizer.classList.remove('speaking');
+    atualizarBotoesAudio(false);
+}
+
+function atualizarBotoesAudio(falando) {
+    const btnOuvir = document.getElementById('btnIaOuvir');
+    if (btnOuvir) {
+        btnOuvir.textContent = falando ? '▶ REPRODUZINDO...' : '▶ OUVIR';
+    }
+}
+
+async function perguntarIA(event) {
+    event.preventDefault();
+    const input = document.getElementById('inputPerguntaIA');
+    if (!input || !input.value.trim()) return;
+
+    const pergunta = input.value.trim();
+    input.value = '';
+
+    const speechBox = document.getElementById('iaSpeechBox');
+    if (speechBox) {
+        speechBox.innerHTML = `
+            <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px;">
+                PERGUNTA: "${pergunta}"
+            </div>
+            <div style="color: var(--text-tertiary); font-style: italic;">Processando resposta executiva...</div>
+        `;
+    }
+
+    try {
+        const resp = await fetch('/api/ia/perguntar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pergunta: pergunta })
+        });
+
+        if (!resp.ok) throw new Error('Erro ao consultar IA');
+        const data = await resp.json();
+
+        if (speechBox) {
+            speechBox.innerHTML = `
+                <div style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 6px; font-size: 11px;">
+                    RESPOSTA MALHACORE IA [${data.timestamp}]
+                </div>
+                <div style="color: #FFFFFF; font-size: 14px; line-height: 1.6;">${data.resposta}</div>
+            `;
+        }
+
+        // Falar a resposta
+        tocarAudioBriefing(data.resposta);
+    } catch (err) {
+        console.error(err);
+        if (speechBox) {
+            speechBox.innerHTML = '<div style="color: var(--status-inadimplente-text);">Não foi possível obter resposta no momento.</div>';
+        }
+    }
+}
+
+// Fechar com tecla ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modalIA = document.getElementById('modalIABriefing');
+        if (modalIA && modalIA.classList.contains('open')) {
+            fecharModalIABriefing();
+        }
+    }
+});
 
 
 

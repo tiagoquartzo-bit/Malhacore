@@ -18,6 +18,9 @@ class LeadCreate(BaseModel):
     metodo_pagamento: Optional[str] = "PIX"
     vencimento: Optional[str] = None
     observacoes: Optional[str] = None
+    vincular_app: Optional[bool] = False
+    app_vinculado_slug: Optional[str] = None
+    app_estagio_deploy: Optional[str] = "ROLLOUT"
 
 
 class LeadUpdateStatus(BaseModel):

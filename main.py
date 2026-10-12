@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from config.settings import settings
 from database.connection import engine, Base, SessionLocal
 from services.seed_data import seed_database
-from routes import api_router, telemetria_router, views_router
+from routes import api_router, telemetria_router, views_router, ia_router
 
 # Inicializar tabelas do banco SQLite
 Base.metadata.create_all(bind=engine)
@@ -27,4 +27,5 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.include_router(views_router)
 app.include_router(api_router)
 app.include_router(telemetria_router)
+app.include_router(ia_router)
 

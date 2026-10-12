@@ -128,16 +128,16 @@
         <table class="ledger-table" id="tabelaLeads">
             <thead>
                 <tr>
-                    <th>CÓDIGO</th>
-                    <th>EMPRESA / RAZÃO SOCIAL</th>
-                    <th>CNPJ / CPF</th>
-                    <th>CONTATO & TELEFONE</th>
-                    <th>ORIGEM</th>
-                    <th>MENSALIDADE</th>
-                    <th>VENCIMENTO</th>
-                    <th>STATUS LIQUIDAÇÃO</th>
-                    <th>MÉTODO</th>
-                    <th style="text-align: right;">AÇÕES DIRETAS</th>
+                    <th class="col-codigo">CÓDIGO</th>
+                    <th class="col-empresa">EMPRESA / RAZÃO SOCIAL</th>
+                    <th class="col-documento">CNPJ / CPF</th>
+                    <th class="col-contato">CONTATO & TELEFONE</th>
+                    <th class="col-origem">ORIGEM</th>
+                    <th class="col-valor">MENSALIDADE</th>
+                    <th class="col-vencimento">VENCIMENTO</th>
+                    <th class="col-status">STATUS LIQUIDAÇÃO</th>
+                    <th class="col-metodo">MÉTODO</th>
+                    <th class="col-acoes" style="text-align: right;">AÇÕES DIRETAS</th>
                 </tr>
             </thead>
             <tbody>
@@ -147,31 +147,31 @@
                     data-status="{{ lead.status_pagamento }}"
                     data-search="{{ lead.razao_social }} {{ lead.nome_fantasia or '' }} {{ lead.documento }} {{ lead.contato_nome }} {{ lead.telefone }} {{ lead.email }} {{ lead.codigo }}"
                 >
-                    <td class="mono" style="font-weight: 700; color: var(--text-secondary);">
+                    <td class="mono col-codigo" style="font-weight: 700;">
                         {{ lead.codigo }}
                     </td>
-                    <td>
+                    <td class="col-empresa">
                         <div style="font-weight: 700; color: #FFFFFF;">{{ lead.razao_social }}</div>
                         {% if lead.nome_fantasia and lead.nome_fantasia != lead.razao_social %}
                         <div style="font-size: 11px; color: var(--text-secondary);">{{ lead.nome_fantasia }}</div>
                         {% endif %}
                     </td>
-                    <td class="mono" style="color: var(--text-secondary); font-size: 11px;">
+                    <td class="mono col-documento" style="font-size: 11px;">
                         {{ lead.documento }}
                     </td>
-                    <td>
+                    <td class="col-contato">
                         <div style="color: var(--text-primary);">{{ lead.contato_nome }}</div>
                         <div class="mono" style="font-size: 11px; color: var(--text-tertiary);">{{ lead.telefone }}</div>
                     </td>
-                    <td>
+                    <td class="col-origem">
                         <span class="mono" style="font-size: 10px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.04); padding: 2px 6px; border: 1px solid var(--border-subtle);">
                             {{ lead.origem }}
                         </span>
                     </td>
-                    <td class="mono" style="font-weight: 700;">
+                    <td class="mono col-valor" style="font-weight: 700;">
                         R$ {{ "{:,.2f}".format(lead.valor_mensal).replace(",", "X").replace(".", ",").replace("X", ".") }}
                     </td>
-                    <td class="mono" style="font-size: 11px; color: var(--text-secondary);">
+                    <td class="mono col-vencimento" style="font-size: 11px;">
                         {% if lead.status_pagamento == 'PAGO' %}
                             <span style="color: var(--status-pago-text);">PAGO EM {{ lead.data_pagamento }}</span>
                         {% elif lead.status_pagamento == 'INADIMPLENTE' %}
@@ -180,7 +180,7 @@
                             {{ lead.vencimento or "A DEFINIR" }}
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="col-status">
                         {% if lead.status_pagamento == 'PAGO' %}
                             <span class="badge-status pago">PAGO</span>
                         {% elif lead.status_pagamento == 'PENDENTE' %}
@@ -191,10 +191,10 @@
                             <span class="badge-status cancelado">{{ lead.status_pagamento }}</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="col-metodo">
                         <span class="tag-method mono">{{ lead.metodo_pagamento }}</span>
                     </td>
-                    <td style="text-align: right; white-space: nowrap;">
+                    <td class="col-acoes" style="text-align: right; white-space: nowrap;">
                         <button 
                             class="btn btn-sm btn-outline-cyan" 
                             onclick="abrirModalDetalhes({{ lead.id }})"
@@ -242,8 +242,19 @@
                 <p>Monitoramento ativo de disponibilidade, pings e integridade operacional dos seus sistemas</p>
             </div>
             <div class="ledger-actions">
-                <button class="btn btn-primary" onclick="abrirModalConectarApp()">+ CONECTAR APP (SDK)</button>
+                <button class="btn btn-primary" onclick="abrirModalNovoLead()">+ NOVO LEAD / VINCULAR APP</button>
+                <button class="btn btn-outline-cyan" onclick="abrirModalConectarApp()">+ CONECTAR SDK</button>
             </div>
+        </div>
+
+        <!-- STATUS DE CONEXÃO AUTOMÁTICA DA CENTRAL DE APPS -->
+        <div id="statusConexaoApps" style="margin: 15px 20px 0 20px; padding: 10px 16px; background: rgba(0, 210, 211, 0.05); border: 1px solid rgba(0, 210, 211, 0.3); display: flex; align-items: center; justify-content: space-between; font-size: 11px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="live-indicator" style="background: var(--status-pago-text); box-shadow: 0 0 8px var(--status-pago-text);"></span>
+                <span style="font-weight: 700; color: #FFFFFF;">CENTRAL DE APPS CONECTADA EM TEMPO REAL</span>
+                <span style="color: var(--text-secondary);">— AUTO-CONEXÃO VERIFICADA AO ABRIR O PAINEL</span>
+            </div>
+            <button class="btn btn-sm btn-outline-cyan" onclick="verificarConexaoCentralApps(true)" style="font-size: 10px; padding: 3px 8px;">REVERIFICAR CONEXÃO</button>
         </div>
 
         <!-- KPIs DO CICLO DE VIDA DE APPS -->
@@ -720,6 +731,34 @@
                     <div class="form-group">
                         <label class="form-label">DATA DE VENCIMENTO</label>
                         <input type="date" name="vencimento" class="form-control mono">
+                    </div>
+
+                    <div class="form-group col-span-2" style="border: 1px dashed var(--accent-cyan); padding: 14px; background: rgba(0, 240, 255, 0.04); border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <input type="checkbox" id="checkVincularApp" name="vincular_app" value="true" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px; cursor: pointer;" onchange="document.getElementById('grupoConfigApp').style.display = this.checked ? 'grid' : 'none'">
+                            <label for="checkVincularApp" style="font-weight: 700; color: var(--accent-cyan); font-size: 11px; cursor: pointer; letter-spacing: 0.04em;">
+                                [✓] INTEGRAR AUTOMATICAMENTE À CENTRAL DE APPS (AUTO-PROVISIONAMENTO)
+                            </label>
+                        </div>
+                        <div id="grupoConfigApp" class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
+                            <div>
+                                <label class="form-label" style="font-size: 10px;">APP VINCULADO NO HUB</label>
+                                <select name="app_vinculado_slug" class="form-control" style="font-size: 11px;">
+                                    <option value="">-- CRIAR NOVO PONTO EXCLUSIVO NO HUB --</option>
+                                    {% for app in apps %}
+                                    <option value="{{ app.slug }}">{{ app.nome }} ({{ app.porta }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: 10px;">ESTÁGIO INICIAL DO SISTEMA</label>
+                                <select name="app_estagio_deploy" class="form-control" style="font-size: 11px;">
+                                    <option value="ROLLOUT">ROLLOUT (Em Implantação)</option>
+                                    <option value="PRODUCAO">PRODUÇÃO (Operacional)</option>
+                                    <option value="HOMOLOGACAO">HOMOLOGAÇÃO (Testes)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group col-span-2">
