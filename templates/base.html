@@ -12,10 +12,15 @@
             <span class="brand-title">MALHACORE</span>
             <span class="brand-tag">LEDGER & COMMAND</span>
         </div>
-        <div class="telemetry-status">
-            <button type="button" class="btn-copilot" onclick="abrirModalCopilot()" title="Abrir Copilot MalhaCore (Consulta Gratuita à Base de Dados)">
-                <span class="copilot-dot"></span>🤖 COPILOT IA
+
+        <!-- BOTÃO COPILOT IA DESTACADO NO TOPO -->
+        <div class="topbar-center">
+            <button type="button" class="btn-copilot" onclick="abrirModalCopilot()" title="Consultar Copilot MalhaCore (100% Gratuito à Base de Dados)">
+                <span class="copilot-dot"></span>🤖 COPILOT IA [CONSULTAR]
             </button>
+        </div>
+
+        <div class="telemetry-status">
             <span><span class="live-indicator"></span>SISTEMA ATIVO</span>
             <span class="mono">APPS: {{ telemetria.total_apps if telemetria else 0 }}</span>
             <span class="mono">DISP: {{ telemetria.taxa_disponibilidade if telemetria else 100 }}%</span>

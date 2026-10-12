@@ -781,6 +781,14 @@ body {
    COPILOT IA MALHACORE (CONSULTA GRATUITA À BASE DE DADOS - SEM ÁUDIO)
    ========================================================================== */
 
+.topbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  margin: 0 16px;
+}
+
 .btn-copilot {
   display: inline-flex;
   align-items: center;
