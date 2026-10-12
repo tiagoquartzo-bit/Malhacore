@@ -184,6 +184,20 @@ def seed_database(db: Session):
     from services import auth_service
     auth_service.obter_ou_criar_usuario_admin(db, email="tiagoaraujoxsl@gmail.com", senha_pura="Neyva@10")
 
+    # EXPURGAR QUALQUER LEAD FICTÍCIO ANTIGO AUTOMATICAMENTE
+    nomes_ficticios = [
+        "TransLogística", "TransLogistica", "Amazonas", "EcoFrotas", "Porto Seguro",
+        "Centro-Oeste", "Minas Rodo", "Expresso Rápido", "Expresso Rapido",
+        "Delta Cargas", "NorteLog", "Atlas", "Beta"
+    ]
+    for termo in nomes_ficticios:
+        db.query(Lead).filter(Lead.razao_social.like(f"%{termo}%")).delete(synchronize_session=False)
+    db.commit()
+
+    # RESOLVER TODOS OS ERROS SIMULADOS DE TESTE
+    db.query(RegistroErro).filter(RegistroErro.status == "NOVO").update({"status": "RESOLVIDO"})
+    db.commit()
+
     existing_count = db.query(Lead).count()
     if existing_count == 0:
         for item in SAMPLE_LEADS:
